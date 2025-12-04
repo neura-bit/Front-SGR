@@ -1,0 +1,76 @@
+.success-modal-overlay {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 70;
+    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.success-modal-content {
+    background-color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid #e5e7eb;
+    min-width: 300px;
+}
+
+.dark .success-modal-content {
+    background-color: #1f2937;
+    border-color: #374151;
+}
+
+.success-icon-wrapper {
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.success-message {
+    font-weight: 500;
+    color: #111827;
+    flex: 1;
+}
+
+.dark .success-message {
+    color: white;
+}
+
+.success-close-btn {
+    color: #9ca3af;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.success-close-btn:hover {
+    background-color: #f3f4f6;
+    color: #4b5563;
+}
+
+.dark .success-close-btn:hover {
+    background-color: #374151;
+    color: #e5e7eb;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-1rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

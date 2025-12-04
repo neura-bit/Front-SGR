@@ -1,0 +1,31 @@
+.main-layout {
+    display: flex;
+    min-height: 100vh;
+    background: var(--color-bg);
+}
+
+.main-layout-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 260px;
+    transition: margin-left var(--transition-base);
+}
+
+.main-content {
+    flex: 1;
+    padding: var(--spacing-xl);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@media (max-width: 1024px) {
+    .main-layout-content {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .main-content {
+        padding: var(--spacing-md);
+    }
+}
