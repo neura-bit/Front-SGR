@@ -1,36 +1,59 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { User } from '../types/index';
 import type { UserRole } from '../types/index';
-import { mockUsers } from '../utils/mockData';
+import { authService } from '../services/authService';
+import type { AuthUser } from '../services/authService';
 
 interface AuthContextType {
-    user: User | null;
-    login: (email: string, password: string) => boolean;
+    user: AuthUser | null;
+    login: (username: string, password: string) => Promise<boolean>;
     logout: () => void;
     hasRole: (roles: UserRole[]) => boolean;
     isAuthenticated: boolean;
+    isLoading: boolean;
+    error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<AuthUser | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const login = (email: string, password: string): boolean => {
-        const foundUser = mockUsers.find(
-            (u) => u.email === email && u.password === password && u.active
-        );
-
-        if (foundUser) {
-            setUser(foundUser);
-            return true;
+    // Check for stored user on mount
+    useEffect(() => {
+        const storedUser = authService.getStoredUser();
+        if (storedUser) {
+            setUser(storedUser);
         }
-        return false;
+        setIsLoading(false);
+    }, []);
+
+    const login = async (username: string, password: string): Promise<boolean> => {
+        try {
+            setError(null);
+            setIsLoading(true);
+
+            const authUser = await authService.login({ username, password });
+            setUser(authUser);
+
+            return true;
+        } catch (err: any) {
+            const message = err.response?.data?.message ||
+                err.response?.data?.error ||
+                'Error de autenticación. Verifique sus credenciales.';
+            setError(message);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const logout = () => {
+        authService.logout();
         setUser(null);
+        setError(null);
     };
 
     const hasRole = (roles: UserRole[]): boolean => {
@@ -41,7 +64,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const isAuthenticated = user !== null;
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, hasRole, isAuthenticated }}>
+        <AuthContext.Provider value={{
+            user,
+            login,
+            logout,
+            hasRole,
+            isAuthenticated,
+            isLoading,
+            error,
+        }}>
             {children}
         </AuthContext.Provider>
     );

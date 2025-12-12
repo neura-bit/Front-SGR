@@ -3,40 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Mail, Lock, Truck, ShieldCheck, MapPin, BarChart3 } from 'lucide-react';
-import { mockUsers } from '../utils/mockData';
+import { User, Lock, Truck, ShieldCheck, MapPin, BarChart3 } from 'lucide-react';
 import './Login.css';
 
 export const Login: React.FC = () => {
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
 
-    const { login } = useAuth();
+    const { login, isLoading, error } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
-        setIsLoading(true);
 
-        // Simulate API call delay
-        setTimeout(() => {
-            const success = login(email, password);
+        const success = await login(username, password);
 
-            if (success) {
-                navigate('/');
-            } else {
-                setError('Credenciales inválidas');
-                setIsLoading(false);
-            }
-        }, 500);
-    };
-
-    const handleQuickLogin = (userEmail: string) => {
-        setEmail(userEmail);
-        setPassword('demo123');
+        if (success) {
+            navigate('/');
+        }
     };
 
     return (
@@ -78,12 +62,12 @@ export const Login: React.FC = () => {
 
                     <form onSubmit={handleSubmit} className="login-form">
                         <Input
-                            type="email"
-                            label="Correo Electrónico"
-                            placeholder="usuario@sgr.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            icon={<Mail size={20} />}
+                            type="text"
+                            label="Usuario"
+                            placeholder="Tu nombre de usuario"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            icon={<User size={20} />}
                             required
                         />
 
@@ -104,27 +88,9 @@ export const Login: React.FC = () => {
                         </Button>
                     </form>
 
-                    <div className="divider">
-                        <span>Acceso Rápido (Demo)</span>
-                    </div>
-
-                    <div className="demo-users">
-                        {mockUsers.slice(0, 4).map((user) => (
-                            <button
-                                key={user.id}
-                                type="button"
-                                className="demo-user-btn"
-                                onClick={() => handleQuickLogin(user.email)}
-                            >
-                                <div className="demo-user-role">{user.role}</div>
-                                <div className="demo-user-name">{user.name}</div>
-                            </button>
-                        ))}
-                    </div>
-
                     <div className="login-footer">
-                        <p>
-                            Contraseña demo: <strong>demo123</strong>
+                        <p className="text-secondary">
+                            Contacte al administrador si olvidó sus credenciales.
                         </p>
                     </div>
                 </div>

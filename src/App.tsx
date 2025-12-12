@@ -15,6 +15,8 @@ import { ClientList } from './pages/admin/clients/ClientList';
 import { TaskTypeList } from './pages/admin/task-types/TaskTypeList';
 import { UserList } from './pages/admin/users/UserList';
 import { TaskList } from './pages/admin/tasks/TaskList.tsx';
+import { Tracking } from './pages/admin/Tracking';
+import { AsesorTaskList } from './pages/asesor/tasks/AsesorTaskList';
 
 function App() {
   const { isAuthenticated, user } = useAuth();
@@ -60,7 +62,7 @@ function App() {
         }
       >
         <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="tracking" element={<div className="animate-fade-in"><h1>Seguimiento en Vivo</h1><p className="text-secondary">Funcionalidad en desarrollo</p></div>} />
+        <Route path="tracking" element={<Tracking />} />
         <Route path="performance" element={<div className="animate-fade-in"><h1>Análisis de Rendimiento</h1><p className="text-secondary">Funcionalidad en desarrollo</p></div>} />
         <Route path="users" element={<UserList />} />
         <Route path="task-types" element={<TaskTypeList />} />
@@ -83,7 +85,8 @@ function App() {
         }
       >
         <Route path="dashboard" element={<AsesorDashboard />} />
-        <Route path="tasks" element={<div className="animate-fade-in"><h1>Gestión de Tareas</h1><p className="text-secondary">Funcionalidad en desarrollo</p></div>} />
+        <Route path="tasks" element={<AsesorTaskList />} />
+        <Route path="clients" element={<ClientList />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 

@@ -20,6 +20,17 @@ interface ApiUser {
 const mapToUser = (data: any): User => {
     const id = String(data.idUsuario || data.id_usuario || data.id || '');
 
+    // Extract role name from nested rol object
+    const roleName = data.rol?.nombre || data.rolNombre || '';
+    // Map role name to UserRole type
+    const roleMap: Record<string, 'ADMIN' | 'ASESOR' | 'SUPERVISOR' | 'MENSAJERO'> = {
+        'ADMIN': 'ADMIN',
+        'ADMINISTRADOR': 'ADMIN',
+        'ASESOR': 'ASESOR',
+        'SUPERVISOR': 'SUPERVISOR',
+        'MENSAJERO': 'MENSAJERO',
+    };
+
     const user: User = {
         id,
         firstName: data.nombre || '',
@@ -31,6 +42,7 @@ const mapToUser = (data: any): User => {
         roleId: String(data.rol?.id_rol || data.rol?.idRol || data.idRol || ''),
         // Computed fields
         name: `${data.nombre || ''} ${data.apellido || ''}`.trim(),
+        role: roleMap[roleName.toUpperCase()] || undefined,
     };
 
     return user;

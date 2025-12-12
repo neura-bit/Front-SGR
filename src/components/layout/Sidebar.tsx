@@ -40,6 +40,7 @@ const menuItems: MenuItem[] = [
     // Asesor
     { label: 'Dashboard', path: '/asesor/dashboard', icon: <LayoutDashboard size={20} />, roles: ['ASESOR'] },
     { label: 'Tareas', path: '/asesor/tasks', icon: <ClipboardList size={20} />, roles: ['ASESOR'] },
+    { label: 'Clientes', path: '/asesor/clients', icon: <UserCheck size={20} />, roles: ['ASESOR'] },
 
     // Supervisor
     { label: 'Dashboard', path: '/supervisor/dashboard', icon: <LayoutDashboard size={20} />, roles: ['SUPERVISOR'] },
