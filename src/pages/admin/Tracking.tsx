@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Map } from '../../components/map/Map';
-import type { MapMarker } from '../../components/map/Map';
+import { GoogleTrackingMap } from '../../components/map/GoogleTrackingMap';
+import type { CourierMarker } from '../../components/map/GoogleTrackingMap';
 import { trackingService } from '../../services/trackingService';
 import type { CourierPosition } from '../../services/trackingService';
-import { MapPin, Users as UsersIcon, Navigation, Clock, RefreshCw, AlertCircle } from 'lucide-react';
+import { MapPin, Users as UsersIcon, Navigation, RefreshCw, AlertCircle } from 'lucide-react';
 import './Tracking.css';
 
 const REFRESH_INTERVAL = 10000; // 10 seconds
@@ -13,6 +13,7 @@ export const Tracking: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+    const [selectedCourierId, setSelectedCourierId] = useState<string | null>(null);
 
     const fetchCouriers = useCallback(async () => {
         try {
@@ -36,36 +37,19 @@ export const Tracking: React.FC = () => {
         return () => clearInterval(interval);
     }, [fetchCouriers]);
 
-    // Create markers for map
-    const markers: MapMarker[] = couriers.map(courier => ({
+    // Convert couriers to markers format for GoogleTrackingMap
+    const courierMarkers: CourierMarker[] = couriers.map(courier => ({
         id: courier.id,
-        position: [courier.latitude, courier.longitude],
-        popup: (
-            <div className="courier-popup">
-                <div className="courier-popup-header">
-                    <MapPin size={16} className="courier-popup-icon" />
-                    <h4>{courier.name}</h4>
-                </div>
-                <div className="courier-popup-info">
-                    {courier.currentTaskName && (
-                        <p><strong>Tarea:</strong> {courier.currentTaskName}</p>
-                    )}
-                    <p className="courier-popup-time">
-                        <Clock size={12} />
-                        Última actualización: {courier.lastUpdate.toLocaleTimeString()}
-                    </p>
-                </div>
-            </div>
-        ),
+        name: courier.name,
+        latitude: courier.latitude,
+        longitude: courier.longitude,
+        currentTaskName: courier.currentTaskName,
+        lastUpdate: courier.lastUpdate,
     }));
 
-    // Calculate center of map (average of all courier locations or Quito default)
-    const mapCenter = markers.length > 0
-        ? [
-            markers.reduce((sum, m) => sum + (m.position as [number, number])[0], 0) / markers.length,
-            markers.reduce((sum, m) => sum + (m.position as [number, number])[1], 0) / markers.length,
-        ] as [number, number]
-        : [-0.1937, -78.4920] as [number, number]; // Quito default
+    const handleCourierClick = (courier: CourierMarker) => {
+        setSelectedCourierId(courier.id);
+    };
 
     return (
         <div className="tracking-page">
@@ -125,7 +109,11 @@ export const Tracking: React.FC = () => {
                                 </div>
                             ) : (
                                 couriers.map(courier => (
-                                    <div key={courier.id} className="courier-card">
+                                    <div
+                                        key={courier.id}
+                                        className={`courier-card ${selectedCourierId === courier.id ? 'courier-card-selected' : ''}`}
+                                        onClick={() => setSelectedCourierId(courier.id)}
+                                    >
                                         <div className="courier-card-header">
                                             <div className="courier-avatar">
                                                 {courier.name.charAt(0).toUpperCase()}
@@ -154,14 +142,14 @@ export const Tracking: React.FC = () => {
                 </div>
 
                 <div className="tracking-map">
-                    <Map
-                        center={mapCenter}
-                        zoom={14}
-                        markers={markers}
+                    <GoogleTrackingMap
+                        couriers={courierMarkers}
                         height="calc(100vh - 200px)"
+                        onCourierClick={handleCourierClick}
                     />
                 </div>
             </div>
         </div>
     );
 };
+

@@ -1,13 +1,28 @@
 import React from 'react';
 import { useData } from '../../contexts/DataContext';
 import { Card, CardHeader } from '../../components/ui/Card';
-import { Users, Package } from 'lucide-react';
-import { TaskStatusBadge } from '../../components/TaskStatusBadge';
+import { Users, Package, User } from 'lucide-react';
+import { CourierTasksPanel } from '../../components/shared/CourierTasksPanel';
 
 export const SupervisorDashboard: React.FC = () => {
-    const { tasks, users } = useData();
+    const { tasks, users, taskStatuses } = useData();
     const couriers = users.filter((u) => u.role === 'MENSAJERO');
-    const activeTasks = tasks.filter(t => t.status === 'assigned' || t.status === 'in_progress');
+
+    // Active tasks are those with proceso = true
+    const activeTasks = tasks.filter(t => t.proceso);
+
+    // Get courier name by ID
+    const getCourierName = (courierId: string | null | undefined) => {
+        if (!courierId) return null;
+        const courier = users.find(u => u.id === courierId);
+        return courier ? `${courier.firstName} ${courier.lastName}` : null;
+    };
+
+    // Get task status name by ID
+    const getTaskStatusName = (taskStatusId: string) => {
+        const status = taskStatuses.find(s => s.id === taskStatusId);
+        return status?.name || 'N/A';
+    };
 
     return (
         <div className="animate-fade-in">
@@ -46,19 +61,34 @@ export const SupervisorDashboard: React.FC = () => {
                 <Card>
                     <CardHeader title="Tareas para Asignar" subtitle="Gestiona las asignaciones de mensajeros" />
                     <div className="task-list">
-                        {activeTasks.slice(0, 10).map((task) => (
-                            <div key={task.id} className="task-item">
-                                <div className="task-info">
-                                    <div className="task-title">{task.title}</div>
-                                    <div className="text-sm text-tertiary">
-                                        {task.assignedTo ? `Asignado a: ${users.find(u => u.id === task.assignedTo)?.name}` : 'Sin asignar'}
-                                    </div>
-                                </div>
-                                <TaskStatusBadge status={task.status} />
+                        {activeTasks.length === 0 ? (
+                            <div className="text-center py-4 text-secondary">
+                                No hay tareas activas
                             </div>
-                        ))}
+                        ) : (
+                            activeTasks.slice(0, 10).map((task) => (
+                                <div key={task.id} className="task-item">
+                                    <div className="task-info">
+                                        <div className="task-title">{task.nombre}</div>
+                                        <div className="text-sm text-tertiary flex items-center gap-1">
+                                            <User size={12} />
+                                            {getCourierName(task.assignedCourierId)
+                                                ? `Asignado a: ${getCourierName(task.assignedCourierId)}`
+                                                : 'Sin asignar'}
+                                        </div>
+                                    </div>
+                                    <span className={`status-badge ${task.fechaFin ? 'status-completed' : task.proceso ? 'status-in-progress' : 'status-pending'}`}>
+                                        {getTaskStatusName(task.taskStatusId)}
+                                    </span>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </Card>
+            </div>
+
+            <div className="mt-lg">
+                <CourierTasksPanel />
             </div>
         </div>
     );

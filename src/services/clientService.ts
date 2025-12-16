@@ -8,6 +8,7 @@ interface ApiClient {
     rucCi: string;
     direccion: string;
     ciudad: string;
+    detalle?: string;
     latitud?: number;
     longitud?: number;
 }
@@ -22,6 +23,7 @@ const mapToClient = (data: any): Client => {
         rucCi: data.rucCi || '',
         address: data.direccion || '',
         city: data.ciudad || '',
+        detalle: data.detalle || '',
         latitude: data.latitud,
         longitude: data.longitud,
     };
@@ -35,6 +37,7 @@ const mapToApi = (data: Partial<Client>): Partial<ApiClient> => ({
     rucCi: data.rucCi,
     direccion: data.address,
     ciudad: data.city,
+    detalle: data.detalle,
     latitud: data.latitude,
     longitud: data.longitude,
 });

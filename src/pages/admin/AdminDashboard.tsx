@@ -1,15 +1,31 @@
 import React from 'react';
 import { useData } from '../../contexts/DataContext';
 import { Card, CardHeader } from '../../components/ui/Card';
-import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, MapPin } from 'lucide-react';
+import { CourierTasksPanel } from '../../components/shared/CourierTasksPanel';
 import './AdminDashboard.css';
 
 export const AdminDashboard: React.FC = () => {
-    const { getDashboardStats, tasks, users } = useData();
+    const { getDashboardStats, tasks, users, clients, taskStatuses } = useData();
     const stats = getDashboardStats();
 
-    const couriers = users.filter((u) => u.role === 'MENSAJERO' && u.active);
     const recentTasks = tasks.slice(0, 5);
+
+    // Helper functions
+    const getClientName = (clientId: string) => {
+        const client = clients.find(c => c.id === clientId);
+        return client?.name || 'Sin cliente';
+    };
+
+    const getClientAddress = (clientId: string) => {
+        const client = clients.find(c => c.id === clientId);
+        return client?.address || 'Sin dirección';
+    };
+
+    const getTaskStatusName = (taskStatusId: string) => {
+        const status = taskStatuses.find(s => s.id === taskStatusId);
+        return status?.name || 'N/A';
+    };
 
     return (
         <div className="admin-dashboard">
@@ -62,19 +78,20 @@ export const AdminDashboard: React.FC = () => {
 
             <div className="grid grid-cols-2 mt-lg">
                 <Card>
-                    <CardHeader title="Tareas Recientes" subtitle="Últimas tareas registradas  en el sistema" />
+                    <CardHeader title="Tareas Recientes" subtitle="Últimas tareas registradas en el sistema" />
                     <div className="task-list">
                         {recentTasks.length > 0 ? (
                             recentTasks.map((task) => (
                                 <div key={task.id} className="task-item">
                                     <div className="task-info">
-                                        <div className="task-title">{task.title}</div>
-                                        <div className="task-address text-sm text-tertiary">
-                                            {task.deliveryAddress}
+                                        <div className="task-title">{task.nombre}</div>
+                                        <div className="task-address text-sm text-tertiary flex items-center gap-1">
+                                            <MapPin size={12} />
+                                            {getClientName(task.clientId)} - {getClientAddress(task.clientId)}
                                         </div>
                                     </div>
-                                    <div className={`task-status status-${task.status}`}>
-                                        {task.status}
+                                    <div className={`task-status status-${task.fechaFin ? 'completed' : task.proceso ? 'in_progress' : 'pending'}`}>
+                                        {getTaskStatusName(task.taskStatusId)}
                                     </div>
                                 </div>
                             ))
@@ -84,26 +101,8 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                 </Card>
 
-                <Card>
-                    <CardHeader title="Mensajeros" subtitle={`${couriers.length} mensajeros activos`} />
-                    <div className="courier-list">
-                        {couriers.map((courier) => (
-                            <div key={courier.id} className="courier-item">
-                                <div className="courier-avatar">
-                                    {courier.name.charAt(0)}
-                                </div>
-                                <div className="courier-info">
-                                    <div className="courier-name">{courier.name}</div>
-                                    <div className="courier-email text-xs text-tertiary">{courier.email}</div>
-                                </div>
-                                <div className="courier-status">
-                                    <div className="status-dot"></div>
-                                    Activo
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
+                {/* Courier Tasks Panel */}
+                <CourierTasksPanel />
             </div>
 
             <div className="mt-lg">

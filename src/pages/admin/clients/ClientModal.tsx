@@ -3,7 +3,8 @@ import { useData } from '../../../contexts/DataContext';
 import type { Client } from '../../../types/index';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { X, UserCheck } from 'lucide-react';
+import { GoogleAddressPicker } from '../../../components/map/GoogleAddressPicker';
+import { X, UserCheck, MapPin } from 'lucide-react';
 import './Clients.css';
 
 interface ClientModalProps {
@@ -22,8 +23,9 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
         rucCi: '',
         address: '',
         city: '',
-        latitude: '',
-        longitude: '',
+        detalle: '',
+        latitude: undefined as number | undefined,
+        longitude: undefined as number | undefined,
     });
 
     useEffect(() => {
@@ -34,8 +36,9 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
                 rucCi: client.rucCi,
                 address: client.address,
                 city: client.city,
-                latitude: client.latitude?.toString() || '',
-                longitude: client.longitude?.toString() || '',
+                detalle: client.detalle || '',
+                latitude: client.latitude,
+                longitude: client.longitude,
             });
         } else {
             setFormData({
@@ -44,8 +47,9 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
                 rucCi: '',
                 address: '',
                 city: '',
-                latitude: '',
-                longitude: '',
+                detalle: '',
+                latitude: undefined,
+                longitude: undefined,
             });
         }
     }, [client]);
@@ -58,8 +62,6 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
         try {
             const clientData = {
                 ...formData,
-                latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
-                longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
             };
 
             if (client) {
@@ -85,7 +87,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
         <div className="client-modal-overlay">
             <div className="client-modal-backdrop" onClick={onClose} />
 
-            <div className="client-modal-content">
+            <div className="client-modal-content client-modal-wide">
                 <div className="client-modal-header">
                     <div className="flex items-center gap-3">
                         <div className="client-icon-box">
@@ -106,65 +108,71 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
                 </div>
 
                 <form onSubmit={handleSubmit} className="client-modal-form">
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input
-                                label="Nombre Completo"
-                                placeholder="Ej: Juan Pérez"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                required
-                            />
-                            <Input
-                                label="RUC / CI"
-                                placeholder="Ej: 1712345678"
-                                value={formData.rucCi}
-                                onChange={(e) => setFormData({ ...formData, rucCi: e.target.value })}
-                                required
-                            />
+                    <div className="client-modal-grid">
+                        {/* Left Column - Basic Info */}
+                        <div className="client-form-section">
+                            <h3 className="client-section-title">
+                                <UserCheck size={16} />
+                                Información del Cliente
+                            </h3>
+                            <div className="space-y-4">
+                                <Input
+                                    label="Nombre Completo"
+                                    placeholder="Ej: Juan Pérez"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                    required
+                                />
+                                <Input
+                                    label="RUC / CI"
+                                    placeholder="Ej: 1712345678"
+                                    value={formData.rucCi}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, rucCi: e.target.value }))}
+                                    required
+                                />
+                                <Input
+                                    label="Teléfono"
+                                    placeholder="Ej: 0999999999"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                                    required
+                                />
+                                <Input
+                                    label="Ciudad"
+                                    placeholder="Ej: Quito"
+                                    value={formData.city}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                                    required
+                                />
+                                <div className="input-wrapper">
+                                    <label className="input-label">Detalle / Referencia</label>
+                                    <textarea
+                                        value={formData.detalle}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, detalle: e.target.value }))}
+                                        className="input"
+                                        rows={3}
+                                        placeholder="Ej: Edificio azul, segundo piso, oficina 201"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input
-                                label="Teléfono"
-                                placeholder="Ej: 0999999999"
-                                value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                required
-                            />
-                            <Input
-                                label="Ciudad"
-                                placeholder="Ej: Quito"
-                                value={formData.city}
-                                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                                required
-                            />
-                        </div>
-
-                        <Input
-                            label="Dirección"
-                            placeholder="Ej: Av. Siempre Viva 123"
-                            value={formData.address}
-                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                            required
-                        />
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input
-                                label="Latitud (Opcional)"
-                                type="number"
-                                step="any"
-                                placeholder="Ej: -0.1807"
-                                value={formData.latitude}
-                                onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                            />
-                            <Input
-                                label="Longitud (Opcional)"
-                                type="number"
-                                step="any"
-                                placeholder="Ej: -78.4678"
-                                value={formData.longitude}
-                                onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                        {/* Right Column - Location */}
+                        <div className="client-form-section">
+                            <h3 className="client-section-title">
+                                <MapPin size={16} />
+                                Ubicación del Cliente
+                            </h3>
+                            <GoogleAddressPicker
+                                address={formData.address}
+                                latitude={formData.latitude}
+                                longitude={formData.longitude}
+                                onLocationChange={(location) => setFormData(prev => ({
+                                    ...prev,
+                                    ...(location.address !== undefined && { address: location.address }),
+                                    ...(location.latitude !== undefined && { latitude: location.latitude }),
+                                    ...(location.longitude !== undefined && { longitude: location.longitude })
+                                }))}
                             />
                         </div>
                     </div>

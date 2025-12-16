@@ -61,6 +61,7 @@ export interface Client {
     rucCi: string;
     address: string;
     city: string;
+    detalle?: string;
     latitude?: number;
     longitude?: number;
 }

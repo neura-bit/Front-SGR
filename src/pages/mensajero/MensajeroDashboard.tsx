@@ -2,21 +2,44 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import { Card, CardHeader } from '../../components/ui/Card';
-import { Package, CheckCircle, Clock } from 'lucide-react';
-import { TaskStatusBadge } from '../../components/TaskStatusBadge';
+import { Package, CheckCircle, Clock, MapPin } from 'lucide-react';
 
 export const MensajeroDashboard: React.FC = () => {
     const { user } = useAuth();
-    const { tasks } = useData();
+    const { tasks, clients, taskStatuses } = useData();
 
-    const myTasks = tasks.filter(t => t.assignedTo === user?.id);
+    // Get client name and address
+    const getClientName = (clientId: string) => {
+        const client = clients.find(c => c.id === clientId);
+        return client?.name || 'Sin cliente';
+    };
+
+    const getClientAddress = (clientId: string) => {
+        const client = clients.find(c => c.id === clientId);
+        return client?.address || 'Sin dirección';
+    };
+
+    // Get task status name
+    const getTaskStatusName = (taskStatusId: string) => {
+        const status = taskStatuses.find(s => s.id === taskStatusId);
+        return status?.name || 'N/A';
+    };
+
+    // My tasks - assigned to current user
+    const myTasks = tasks.filter(t => t.assignedCourierId === user?.id);
+
+    // Today's tasks (based on fechaLimite)
     const todayTasks = myTasks.filter(t => {
-        const taskDate = new Date(t.scheduledDate);
+        const taskDate = new Date(t.fechaLimite);
         const today = new Date();
         return taskDate.toDateString() === today.toDateString();
     });
-    const inProgress = myTasks.filter(t => t.status === 'in_progress').length;
-    const completed = myTasks.filter(t => t.status === 'completed').length;
+
+    // In progress (proceso = true and no fechaFin)
+    const inProgress = myTasks.filter(t => t.proceso && !t.fechaFin).length;
+
+    // Completed (has fechaFin)
+    const completed = myTasks.filter(t => t.fechaFin).length;
 
     return (
         <div className="animate-fade-in">
@@ -71,10 +94,15 @@ export const MensajeroDashboard: React.FC = () => {
                             todayTasks.map((task) => (
                                 <div key={task.id} className="task-item">
                                     <div className="task-info">
-                                        <div className="task-title">{task.title}</div>
-                                        <div className="text-sm text-tertiary">{task.deliveryAddress}</div>
+                                        <div className="task-title">{task.nombre}</div>
+                                        <div className="text-sm text-tertiary flex items-center gap-1">
+                                            <MapPin size={12} />
+                                            {getClientName(task.clientId)} - {getClientAddress(task.clientId)}
+                                        </div>
                                     </div>
-                                    <TaskStatusBadge status={task.status} />
+                                    <span className={`status-badge ${task.fechaFin ? 'status-completed' : task.proceso ? 'status-in-progress' : 'status-pending'}`}>
+                                        {getTaskStatusName(task.taskStatusId)}
+                                    </span>
                                 </div>
                             ))
                         ) : (

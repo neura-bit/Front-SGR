@@ -137,12 +137,19 @@
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .courier-card:hover {
     border-color: #0ea5e9;
     box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
     transform: translateY(-2px);
+}
+
+.courier-card-selected {
+    border-color: #0ea5e9;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(103, 126, 234, 0.05) 100%);
+    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.2);
 }
 
 .courier-card-header {
@@ -373,6 +380,7 @@
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }

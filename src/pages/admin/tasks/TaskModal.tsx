@@ -98,9 +98,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
         if (task && !formData.codigo.trim()) {
             newErrors.codigo = 'El código es requerido';
         }
-        if (!formData.fechaInicio) {
-            newErrors.fechaInicio = 'La fecha de inicio es requerida';
-        }
+        // Removed fechaInicio validation - it will be set by another API
         if (!formData.fechaLimite) {
             newErrors.fechaLimite = 'La fecha límite es requerida';
         }
@@ -138,7 +136,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
             const taskData = {
                 nombre: formData.nombre,
                 codigo: formData.codigo,
-                fechaInicio: formData.fechaInicio,
+                // fechaInicio is not included - will be set by another API
                 fechaLimite: formData.fechaLimite,
                 fechaFin: formData.fechaFin || null,
                 comentario: formData.comentario || null,
@@ -231,13 +229,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
                         <div className="form-section">
                             <h3 className="form-section-title">Fechas</h3>
                             <div className="form-grid">
-                                <Input
-                                    label="Fecha Inicio *"
-                                    type="datetime-local"
-                                    value={formData.fechaInicio}
-                                    onChange={(e) => setFormData({ ...formData, fechaInicio: e.target.value })}
-                                    error={errors.fechaInicio}
-                                />
+                                {/* Fecha Inicio removed - will be set by another API */}
                                 <Input
                                     label="Fecha Límite *"
                                     type="datetime-local"
