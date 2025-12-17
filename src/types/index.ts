@@ -34,6 +34,7 @@ export interface Category {
     name: string;
     description?: string;
     color?: string;
+    active?: boolean;
 }
 
 export interface Branch {
@@ -42,11 +43,13 @@ export interface Branch {
     address: string;
     city: string;
     phone: string;
+    active?: boolean;
 }
 
 export interface Role {
     id: string;
     name: string;
+    active?: boolean;
 }
 
 export interface TaskStatusEntity {

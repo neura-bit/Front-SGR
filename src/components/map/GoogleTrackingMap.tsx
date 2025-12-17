@@ -180,7 +180,7 @@ export const GoogleTrackingMap: React.FC<GoogleTrackingMapProps> = ({
                 map.setCenter({ lat: couriers[0].latitude, lng: couriers[0].longitude });
                 map.setZoom(15);
             } else {
-                map.fitBounds(bounds, { padding: 50 });
+                map.fitBounds(bounds, 50);
             }
         }
     }, [couriers, isLoading, onCourierClick]);

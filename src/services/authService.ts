@@ -24,6 +24,7 @@ export interface AuthUser {
     firstName: string;
     lastName: string;
     name: string;
+    email?: string;
     role: UserRole;
     token: string;
     expiresAt: number;

@@ -185,7 +185,6 @@ export const GoogleAddressPicker: React.FC<GoogleAddressPickerProps> = ({
         setUrlInput(url);
         setError(null);
 
-        let finalUrl = url;
         let coords = parseGoogleMapsUrl(url);
 
         // If it's a short URL and we couldn't parse it directly, try to expand it
@@ -194,7 +193,6 @@ export const GoogleAddressPicker: React.FC<GoogleAddressPickerProps> = ({
             try {
                 const expandedUrl = await expandShortUrl(url);
                 if (expandedUrl) {
-                    finalUrl = expandedUrl;
                     coords = parseGoogleMapsUrl(expandedUrl);
                 }
             } catch {

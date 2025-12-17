@@ -6,7 +6,7 @@ import { CourierTasksPanel } from '../../components/shared/CourierTasksPanel';
 import './AdminDashboard.css';
 
 export const AdminDashboard: React.FC = () => {
-    const { getDashboardStats, tasks, users, clients, taskStatuses } = useData();
+    const { getDashboardStats, tasks, clients, taskStatuses } = useData();
     const stats = getDashboardStats();
 
     const recentTasks = tasks.slice(0, 5);

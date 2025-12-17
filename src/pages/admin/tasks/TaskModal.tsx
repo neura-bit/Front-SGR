@@ -136,7 +136,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
             const taskData = {
                 nombre: formData.nombre,
                 codigo: formData.codigo,
-                // fechaInicio is not included - will be set by another API
+                fechaInicio: formData.fechaInicio || new Date().toISOString(),
                 fechaLimite: formData.fechaLimite,
                 fechaFin: formData.fechaFin || null,
                 comentario: formData.comentario || null,

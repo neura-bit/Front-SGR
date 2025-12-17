@@ -141,12 +141,6 @@ export const AsesorTaskList: React.FC = () => {
         return user ? `${user.firstName} ${user.lastName}` : 'N/A';
     };
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('es-EC', { year: 'numeric', month: 'short', day: 'numeric' });
-    };
-
     const formatDateTime = (dateString: string) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);

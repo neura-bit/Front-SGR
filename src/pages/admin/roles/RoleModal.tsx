@@ -51,7 +51,6 @@ export const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onS
                     id: `r${Date.now()}`,
                     ...formData,
                     active: true,
-                    createdAt: new Date(),
                 });
                 if (onSuccess) onSuccess('Rol creado correctamente');
             }

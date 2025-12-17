@@ -217,6 +217,9 @@ export const mockBranches: Branch[] = [
 ];
 
 export const mockTasks: Task[] = [
+    // TODO: Update mock tasks to match current Task interface
+    // Old structure with title, description, status, etc. doesn't match the current schema
+    /*
     {
         id: 't1',
         title: 'Entrega de laptop Dell',
@@ -234,75 +237,7 @@ export const mockTasks: Task[] = [
         createdAt: new Date(),
         updatedAt: new Date(),
     },
-    {
-        id: 't2',
-        title: 'Retiro de documentos legales',
-        description: 'Contratos firmados para archivo',
-        status: 'assigned',
-        taskTypeId: 'tt2',
-        categoryId: 'c2',
-        clientId: 'cl3',
-        assignedTo: 'u5',
-        pickupAddress: 'Avenida 19 #120-45, Bogotá',
-        deliveryAddress: 'Calle 26 #69-76, Bogotá',
-        pickupLocation: { lat: 4.7110, lng: -74.0721 },
-        deliveryLocation: { lat: 4.6482, lng: -74.1033 },
-        priority: 'medium',
-        scheduledDate: new Date(),
-        createdBy: 'u2',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    },
-    {
-        id: 't3',
-        title: 'Entrega de medicamentos',
-        description: 'Medicamentos de urgencia',
-        status: 'pending',
-        taskTypeId: 'tt1',
-        categoryId: 'c4',
-        clientId: 'cl2',
-        deliveryAddress: 'Carrera 15 #85-20, Bogotá',
-        deliveryLocation: { lat: 4.6690, lng: -74.0543 },
-        priority: 'high',
-        scheduledDate: new Date(),
-        createdBy: 'u1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    },
-    {
-        id: 't4',
-        title: 'Entrega de pedido de almuerzo',
-        status: 'completed',
-        taskTypeId: 'tt1',
-        categoryId: 'c5',
-        clientId: 'cl4',
-        assignedTo: 'u6',
-        deliveryAddress: 'Calle 93 #13-22, Bogotá',
-        deliveryLocation: { lat: 4.6764, lng: -74.0538 },
-        priority: 'medium',
-        scheduledDate: new Date(Date.now() - 3600000),
-        completedDate: new Date(Date.now() - 1800000),
-        createdBy: 'u2',
-        createdAt: new Date(Date.now() - 7200000),
-        updatedAt: new Date(Date.now() - 1800000),
-    },
-    {
-        id: 't5',
-        title: 'Entrega de suministros de oficina',
-        description: 'Papel, carpetas y material de oficina',
-        status: 'in_progress',
-        taskTypeId: 'tt1',
-        categoryId: 'c3',
-        clientId: 'cl5',
-        assignedTo: 'u4',
-        deliveryAddress: 'Carrera 7 #32-16, Bogotá',
-        deliveryLocation: { lat: 4.6280, lng: -74.0673 },
-        priority: 'low',
-        scheduledDate: new Date(),
-        createdBy: 'u2',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    },
+    */
 ];
 
 export const mockCourierLocations: CourierLocation[] = [
