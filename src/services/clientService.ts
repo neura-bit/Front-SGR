@@ -4,6 +4,7 @@ import type { Client } from '../types';
 interface ApiClient {
     id_cliente?: number;
     nombre: string;
+    correo?: string;
     telefono: string;
     rucCi: string;
     direccion: string;
@@ -19,6 +20,7 @@ const mapToClient = (data: any): Client => {
     const client: Client = {
         id,
         name: data.nombre || '',
+        email: data.correo || '',
         phone: data.telefono || '',
         rucCi: data.rucCi || '',
         address: data.direccion || '',
@@ -33,6 +35,7 @@ const mapToClient = (data: any): Client => {
 
 const mapToApi = (data: Partial<Client>): Partial<ApiClient> => ({
     nombre: data.name,
+    correo: data.email,
     telefono: data.phone,
     rucCi: data.rucCi,
     direccion: data.address,

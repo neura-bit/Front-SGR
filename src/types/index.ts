@@ -60,6 +60,7 @@ export interface TaskStatusEntity {
 export interface Client {
     id: string;
     name: string;
+    email?: string;
     phone: string;
     rucCi: string;
     address: string;

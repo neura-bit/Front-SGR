@@ -320,3 +320,49 @@
         transform: translateY(0);
     }
 }
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.action-btn:hover {
+    transform: scale(1.1);
+}
+
+.action-btn.edit:hover {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.action-btn.delete:hover {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.action-btn.resend {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.action-btn.resend:hover {
+    background-color: #bfdbfe;
+    color: #1d4ed8;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+}

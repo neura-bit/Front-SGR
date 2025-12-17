@@ -4,7 +4,7 @@ import type { Client } from '../../../types/index';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { GoogleAddressPicker } from '../../../components/map/GoogleAddressPicker';
-import { X, UserCheck, MapPin } from 'lucide-react';
+import { X, UserCheck, MapPin, Mail } from 'lucide-react';
 import './Clients.css';
 
 interface ClientModalProps {
@@ -19,6 +19,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
     const { addClient, updateClient } = useData();
     const [formData, setFormData] = useState({
         name: '',
+        email: '',
         phone: '',
         rucCi: '',
         address: '',
@@ -32,6 +33,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
         if (client) {
             setFormData({
                 name: client.name,
+                email: client.email || '',
                 phone: client.phone,
                 rucCi: client.rucCi,
                 address: client.address,
@@ -43,6 +45,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
         } else {
             setFormData({
                 name: '',
+                email: '',
                 phone: '',
                 rucCi: '',
                 address: '',
@@ -122,6 +125,13 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
                                     value={formData.name}
                                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                                     required
+                                />
+                                <Input
+                                    label="Correo Electrónico"
+                                    type="email"
+                                    placeholder="Ej: cliente@email.com"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                                 />
                                 <Input
                                     label="RUC / CI"

@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../../../contexts/DataContext';
 import type { Task } from '../../../types/index';
 import { Button } from '../../../components/ui/Button';
-import { Plus, Search, Edit2, Trash2, ClipboardList, Calendar, User, CheckCircle } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, ClipboardList, Calendar, User, CheckCircle, Send } from 'lucide-react';
 import { TaskModal } from './TaskModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { SuccessModal } from '../../../components/common/SuccessModal';
+import { taskService } from '../../../services/taskService';
 import './Tasks.css';
 
 export const TaskList: React.FC = () => {
@@ -84,6 +85,21 @@ export const TaskList: React.FC = () => {
     const getTaskTypeName = (taskTypeId: string) => {
         const taskType = taskTypes.find(tt => tt.id === taskTypeId);
         return taskType?.name || 'N/A';
+    };
+
+    const isDeliveryTask = (taskTypeId: string) => {
+        const taskType = taskTypes.find(tt => tt.id === taskTypeId);
+        return taskType?.code === 'entrega';
+    };
+
+    const handleResendCode = async (taskId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            const response = await taskService.resendCode(taskId);
+            handleSuccess(response.mensaje || 'Código reenviado exitosamente');
+        } catch (error) {
+            handleError('Error al reenviar el código. Por favor intente nuevamente.');
+        }
     };
 
     const getCategoryName = (categoryId: string) => {
@@ -217,6 +233,15 @@ export const TaskList: React.FC = () => {
                                 </td>
                                 <td>
                                     <div className="action-buttons">
+                                        {isDeliveryTask(task.taskTypeId) && (
+                                            <button
+                                                onClick={(e) => handleResendCode(task.id, e)}
+                                                className="action-btn resend"
+                                                title="Reenviar Código"
+                                            >
+                                                <Send size={16} />
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => handleOpenModal(task)}
                                             className="action-btn edit"

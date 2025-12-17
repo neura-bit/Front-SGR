@@ -114,4 +114,9 @@ export const taskService = {
     delete: async (id: string): Promise<void> => {
         await api.delete(`/tareas/${id}`);
     },
+
+    resendCode: async (id: string): Promise<{ mensaje: string }> => {
+        const response = await api.post(`/tareas/${id}/reenviar-codigo`);
+        return response.data;
+    },
 };

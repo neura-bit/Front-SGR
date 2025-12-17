@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../../../contexts/DataContext';
 import type { Client } from '../../../types/index';
 import { Button } from '../../../components/ui/Button';
-import { Plus, Search, Edit2, Trash2, UserCheck, Phone, MapPin, CreditCard } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, UserCheck, Phone, MapPin, CreditCard, Mail } from 'lucide-react';
 import { ClientModal } from './ClientModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { SuccessModal } from '../../../components/common/SuccessModal';
@@ -138,6 +138,13 @@ export const ClientList: React.FC = () => {
                                     <CreditCard size={16} />
                                     <span>{client.rucCi}</span>
                                 </div>
+
+                                {client.email && (
+                                    <div className="client-detail">
+                                        <Mail size={16} />
+                                        <span>{client.email}</span>
+                                    </div>
+                                )}
 
                                 <div className="client-detail">
                                     <Phone size={16} />
