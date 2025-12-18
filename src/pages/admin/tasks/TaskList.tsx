@@ -1,38 +1,133 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '../../../contexts/DataContext';
 import type { Task } from '../../../types/index';
 import { Button } from '../../../components/ui/Button';
-import { Plus, Search, Edit2, Trash2, ClipboardList, Calendar, User, CheckCircle, Send } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Calendar, User, Send, Loader2 } from 'lucide-react';
 import { TaskModal } from './TaskModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { SuccessModal } from '../../../components/common/SuccessModal';
 import { taskService } from '../../../services/taskService';
 import './Tasks.css';
 
+type DateFilterType = 'today' | 'yesterday' | 'week' | 'month' | 'custom';
+
+interface DateRange {
+    fechaInicio: string;
+    fechaFin: string;
+}
+
+const getDateRange = (filterType: DateFilterType, customStart?: string, customEnd?: string): DateRange => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (filterType) {
+        case 'today':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+            break;
+        case 'yesterday':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0);
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59);
+            break;
+        case 'week':
+            const dayOfWeek = now.getDay();
+            const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset, 0, 0, 0);
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+            break;
+        case 'month':
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+            break;
+        case 'custom':
+            if (customStart && customEnd) {
+                startDate = new Date(customStart + 'T00:00:00');
+                endDate = new Date(customEnd + 'T23:59:59');
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+                endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+            }
+            break;
+    }
+
+    const formatDateTime = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    };
+
+    return {
+        fechaInicio: formatDateTime(startDate),
+        fechaFin: formatDateTime(endDate)
+    };
+};
+
 export const TaskList: React.FC = () => {
-    const { tasks, deleteTask, refreshTasks, clients, taskTypes, categories, taskStatuses, users } = useData();
+    const { deleteTask, clients, taskTypes, categories, taskStatuses, users } = useData();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
-    const [filteredTasks, setFilteredTasks] = useState<Task[]>(tasks);
+    const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+    const [dateFilteredTasks, setDateFilteredTasks] = useState<Task[]>([]);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    useEffect(() => {
-        refreshTasks();
-    }, []);
+    // Date filter state
+    const [dateFilter, setDateFilter] = useState<DateFilterType>('today');
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
+    const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+
+    const loadFilteredTasks = async () => {
+        setIsLoadingTasks(true);
+        try {
+            const range = getDateRange(dateFilter, customStartDate, customEndDate);
+            const tasks = await taskService.getByDateRange(range.fechaInicio, range.fechaFin);
+            setDateFilteredTasks(tasks);
+        } catch (error) {
+            console.error('Failed to load tasks:', error);
+            handleError('Error al cargar las tareas. Intente nuevamente.');
+        } finally {
+            setIsLoadingTasks(false);
+        }
+    };
 
     useEffect(() => {
-        const filtered = tasks.filter(
+        loadFilteredTasks();
+    }, [dateFilter]);
+
+    useEffect(() => {
+        if (dateFilter === 'custom' && customStartDate && customEndDate) {
+            loadFilteredTasks();
+        }
+    }, [customStartDate, customEndDate]);
+
+    useEffect(() => {
+        const filtered = dateFilteredTasks.filter(
             (task) =>
                 task.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 task.codigo?.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setFilteredTasks(filtered);
-    }, [tasks, searchTerm]);
+    }, [dateFilteredTasks, searchTerm]);
+
+    // Calculate status counts
+    const statusCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        dateFilteredTasks.forEach((task) => {
+            const statusId = task.taskStatusId;
+            counts[statusId] = (counts[statusId] || 0) + 1;
+        });
+        return counts;
+    }, [dateFilteredTasks]);
 
     const handleOpenModal = (task?: Task) => {
         setSelectedTask(task);
@@ -42,6 +137,7 @@ export const TaskList: React.FC = () => {
     const handleCloseModal = () => {
         setSelectedTask(undefined);
         setIsModalOpen(false);
+        loadFilteredTasks(); // Refresh after modal closes
     };
 
     const handleSuccess = (message: string) => {
@@ -65,6 +161,7 @@ export const TaskList: React.FC = () => {
             try {
                 await deleteTask(taskToDelete);
                 handleSuccess('Tarea eliminada correctamente');
+                loadFilteredTasks(); // Refresh after delete
             } catch (error) {
                 handleError('Error al eliminar la tarea. Por favor intente nuevamente.');
             } finally {
@@ -72,10 +169,6 @@ export const TaskList: React.FC = () => {
             }
         }
     };
-
-    const totalTasks = tasks.length;
-    const activeTasks = tasks.filter(t => t.proceso).length;
-    const completedTasks = tasks.filter(t => t.fechaFin).length;
 
     const getClientName = (clientId: string) => {
         const client = clients.find(c => c.id === clientId);
@@ -123,6 +216,24 @@ export const TaskList: React.FC = () => {
         return date.toLocaleDateString('es-EC', { year: 'numeric', month: 'short', day: 'numeric' });
     };
 
+    const handleDateFilterChange = (filter: DateFilterType) => {
+        setDateFilter(filter);
+        if (filter !== 'custom') {
+            setCustomStartDate('');
+            setCustomEndDate('');
+        }
+    };
+
+    const getFilterLabel = () => {
+        switch (dateFilter) {
+            case 'today': return 'Hoy';
+            case 'yesterday': return 'Ayer';
+            case 'week': return 'Esta Semana';
+            case 'month': return 'Este Mes';
+            case 'custom': return 'Personalizado';
+        }
+    };
+
     return (
         <div className="tasks-container">
             <div className="tasks-header">
@@ -136,34 +247,90 @@ export const TaskList: React.FC = () => {
                 </Button>
             </div>
 
-            <div className="tasks-stats-grid">
-                <div className="tasks-stat-card group">
-                    <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Total Tareas</p>
-                        <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{totalTasks}</h3>
+            {/* Date Filter Bar */}
+            <div className="date-filter-bar">
+                <div className="date-filter-label">
+                    <Calendar size={18} />
+                    <span>Filtrar por fecha:</span>
+                </div>
+                <div className="date-filter-buttons">
+                    <button
+                        className={`date-filter-btn ${dateFilter === 'today' ? 'active' : ''}`}
+                        onClick={() => handleDateFilterChange('today')}
+                    >
+                        Hoy
+                    </button>
+                    <button
+                        className={`date-filter-btn ${dateFilter === 'yesterday' ? 'active' : ''}`}
+                        onClick={() => handleDateFilterChange('yesterday')}
+                    >
+                        Ayer
+                    </button>
+                    <button
+                        className={`date-filter-btn ${dateFilter === 'week' ? 'active' : ''}`}
+                        onClick={() => handleDateFilterChange('week')}
+                    >
+                        Semana
+                    </button>
+                    <button
+                        className={`date-filter-btn ${dateFilter === 'month' ? 'active' : ''}`}
+                        onClick={() => handleDateFilterChange('month')}
+                    >
+                        Mes
+                    </button>
+                    <button
+                        className={`date-filter-btn ${dateFilter === 'custom' ? 'active' : ''}`}
+                        onClick={() => handleDateFilterChange('custom')}
+                    >
+                        Personalizado
+                    </button>
+                </div>
+                {dateFilter === 'custom' && (
+                    <div className="custom-date-inputs">
+                        <div className="date-input-group">
+                            <label>Desde:</label>
+                            <input
+                                type="date"
+                                value={customStartDate}
+                                onChange={(e) => setCustomStartDate(e.target.value)}
+                                className="date-input"
+                            />
+                        </div>
+                        <div className="date-input-group">
+                            <label>Hasta:</label>
+                            <input
+                                type="date"
+                                value={customEndDate}
+                                onChange={(e) => setCustomEndDate(e.target.value)}
+                                className="date-input"
+                            />
+                        </div>
                     </div>
-                    <div className="stat-icon-wrapper bg-blue-50 dark:bg-blue-900/20 text-blue-600">
-                        <ClipboardList size={24} />
+                )}
+            </div>
+
+            {/* Status Stats Grid */}
+            <div className="status-stats-grid">
+                <div className="status-stat-card total">
+                    <div className="status-stat-content">
+                        <span className="status-stat-label">Total</span>
+                        <span className="status-stat-value">{dateFilteredTasks.length}</span>
+                    </div>
+                    <div className="status-stat-badge">
+                        {getFilterLabel()}
                     </div>
                 </div>
-                <div className="tasks-stat-card group">
-                    <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Tareas Activas</p>
-                        <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{activeTasks}</h3>
-                    </div>
-                    <div className="stat-icon-wrapper bg-green-50 dark:bg-green-900/20 text-green-600">
-                        <CheckCircle size={24} />
-                    </div>
-                </div>
-                <div className="tasks-stat-card group">
-                    <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Tareas Completadas</p>
-                        <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{completedTasks}</h3>
-                    </div>
-                    <div className="stat-icon-wrapper bg-purple-50 dark:bg-purple-900/20 text-purple-600">
-                        <CheckCircle size={24} />
-                    </div>
-                </div>
+                {taskStatuses.map((status) => {
+                    const count = statusCounts[status.id] || 0;
+                    return (
+                        <div key={status.id} className="status-stat-card">
+                            <div className="status-stat-content">
+                                <span className="status-stat-label">{status.name}</span>
+                                <span className="status-stat-value">{count}</span>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
             <div className="tasks-search-bar">
@@ -180,97 +347,104 @@ export const TaskList: React.FC = () => {
             </div>
 
             <div className="tasks-table-container">
-                <table className="tasks-table">
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Nombre</th>
-                            <th>Cliente</th>
-                            <th>Tipo</th>
-                            <th>Categoría</th>
-                            <th>Estado</th>
-                            <th>Fecha Límite</th>
-                            <th>Mensajero</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredTasks.map((task) => (
-                            <tr key={task.id}>
-                                <td>
-                                    <span className="task-code">{task.codigo}</span>
-                                </td>
-                                <td>
-                                    <div className="task-name-cell">
-                                        <span className="font-medium">{task.nombre}</span>
-                                    </div>
-                                </td>
-                                <td>{getClientName(task.clientId)}</td>
-                                <td>
-                                    <span className="task-type-badge">{getTaskTypeName(task.taskTypeId)}</span>
-                                </td>
-                                <td>{getCategoryName(task.categoryId)}</td>
-                                <td>
-                                    <span className={`status-badge ${task.proceso ? 'status-active' : 'status-inactive'}`}>
-                                        {getTaskStatusName(task.taskStatusId)}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                                        <Calendar size={14} />
-                                        <span className="text-sm">{formatDate(task.fechaLimite)}</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    {task.assignedCourierId ? (
-                                        <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                                            <User size={14} />
-                                            <span className="text-sm">{getUserName(task.assignedCourierId)}</span>
-                                        </div>
-                                    ) : (
-                                        <span className="text-gray-400 text-sm">Sin asignar</span>
-                                    )}
-                                </td>
-                                <td>
-                                    <div className="action-buttons">
-                                        {isDeliveryTask(task.taskTypeId) && (
-                                            <button
-                                                onClick={(e) => handleResendCode(task.id, e)}
-                                                className="action-btn resend"
-                                                title="Reenviar Código"
-                                            >
-                                                <Send size={16} />
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => handleOpenModal(task)}
-                                            className="action-btn edit"
-                                            title="Editar"
-                                        >
-                                            <Edit2 size={16} />
-                                        </button>
-                                        <button
-                                            onClick={(e) => handleDeleteClick(task.id, e)}
-                                            className="action-btn delete"
-                                            title="Eliminar"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </td>
+                {isLoadingTasks ? (
+                    <div className="tasks-loading-state">
+                        <Loader2 size={40} className="loading-spinner" />
+                        <p>Cargando tareas...</p>
+                    </div>
+                ) : (
+                    <table className="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Categoría</th>
+                                <th>Estado</th>
+                                <th>Fecha Límite</th>
+                                <th>Mensajero</th>
+                                <th>Acciones</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {filteredTasks.map((task) => (
+                                <tr key={task.id}>
+                                    <td>
+                                        <span className="task-code">{task.codigo}</span>
+                                    </td>
+                                    <td>
+                                        <div className="task-name-cell">
+                                            <span className="font-medium">{task.nombre}</span>
+                                        </div>
+                                    </td>
+                                    <td>{getClientName(task.clientId)}</td>
+                                    <td>
+                                        <span className="task-type-badge">{getTaskTypeName(task.taskTypeId)}</span>
+                                    </td>
+                                    <td>{getCategoryName(task.categoryId)}</td>
+                                    <td>
+                                        <span className={`status-badge ${task.proceso ? 'status-active' : 'status-inactive'}`}>
+                                            {getTaskStatusName(task.taskStatusId)}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                                            <Calendar size={14} />
+                                            <span className="text-sm">{formatDate(task.fechaLimite)}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {task.assignedCourierId ? (
+                                            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                                                <User size={14} />
+                                                <span className="text-sm">{getUserName(task.assignedCourierId)}</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-400 text-sm">Sin asignar</span>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <div className="action-buttons">
+                                            {isDeliveryTask(task.taskTypeId) && (
+                                                <button
+                                                    onClick={(e) => handleResendCode(task.id, e)}
+                                                    className="action-btn resend"
+                                                    title="Reenviar Código"
+                                                >
+                                                    <Send size={16} />
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleOpenModal(task)}
+                                                className="action-btn edit"
+                                                title="Editar"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDeleteClick(task.id, e)}
+                                                className="action-btn delete"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
 
-                {filteredTasks.length === 0 && (
+                {!isLoadingTasks && filteredTasks.length === 0 && (
                     <div className="tasks-empty-state">
                         <div className="empty-icon-circle">
                             <Search size={32} className="text-gray-400" />
                         </div>
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No se encontraron resultados</h3>
                         <p className="text-gray-500 dark:text-gray-400 text-center max-w-sm mb-6">
-                            No hay tareas que coincidan con tu búsqueda o aún no has creado ninguna.
+                            No hay tareas que coincidan con tu búsqueda o el filtro de fecha seleccionado.
                         </p>
                         <Button onClick={() => setSearchTerm('')} variant="secondary">
                             Limpiar Búsqueda

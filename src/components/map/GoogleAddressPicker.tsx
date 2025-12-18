@@ -95,7 +95,7 @@ const expandShortUrl = async (shortUrl: string): Promise<string | null> => {
     }
 };
 
-// Load Google Maps script
+// Load Google Maps script - shared promise to avoid loading conflicts
 let googleMapsPromise: Promise<void> | null = null;
 
 const loadGoogleMapsScript = (): Promise<void> => {
@@ -105,9 +105,25 @@ const loadGoogleMapsScript = (): Promise<void> => {
         return Promise.resolve();
     }
 
+    // Check if another script is already loading Google Maps
+    const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+    if (existingScript) {
+        // Wait for the existing script to load
+        googleMapsPromise = new Promise((resolve) => {
+            const checkLoaded = setInterval(() => {
+                if (window.google?.maps) {
+                    clearInterval(checkLoaded);
+                    resolve();
+                }
+            }, 100);
+        });
+        return googleMapsPromise;
+    }
+
     googleMapsPromise = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+        // Load with both places and marker libraries, and use loading=async
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,marker&loading=async`;
         script.async = true;
         script.defer = true;
         script.onload = () => resolve();

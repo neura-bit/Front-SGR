@@ -119,4 +119,12 @@ export const taskService = {
         const response = await api.post(`/tareas/${id}/reenviar-codigo`);
         return response.data;
     },
+
+    getByDateRange: async (fechaInicio: string, fechaFin: string): Promise<Task[]> => {
+        const response = await api.get('/tareas/por-fechas', {
+            params: { fechaInicio, fechaFin }
+        });
+        const data = Array.isArray(response.data) ? response.data : (response.data.data || response.data.tareas || []);
+        return data.map(mapToTask);
+    },
 };
