@@ -4,7 +4,7 @@ import type { Client } from '../../../types/index';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { GoogleAddressPicker } from '../../../components/map/GoogleAddressPicker';
-import { X, UserCheck, MapPin, Mail } from 'lucide-react';
+import { X, UserCheck, MapPin } from 'lucide-react';
 import './Clients.css';
 
 interface ClientModalProps {
