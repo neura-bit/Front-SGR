@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../../contexts/DataContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import type { Task } from '../../../types/index';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -15,7 +16,11 @@ interface TaskModalProps {
 }
 
 export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onSuccess, onError }) => {
+    const { user } = useAuth();
     const { addTask, updateTask, clients, taskTypes, categories, taskStatuses, users, refreshClients, refreshTaskTypes, refreshCategories, refreshTaskStatuses, refreshUsers } = useData();
+
+    // Check if logged-in user is an ASESOR
+    const isAsesor = user?.role === 'ASESOR';
     const [formData, setFormData] = useState({
         nombre: '',
         codigo: '',
@@ -80,13 +85,14 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
                 taskTypeId: '',
                 categoryId: '',
                 taskStatusId: creadaStatus?.id || '',
-                createdById: '',
+                // Auto-select logged-in user if they are an ASESOR
+                createdById: isAsesor && user?.id ? user.id : '',
                 assignedCourierId: '',
                 supervisorId: '',
             });
         }
         setErrors({});
-    }, [task, isOpen, taskStatuses]);
+    }, [task, isOpen, taskStatuses, isAsesor, user?.id]);
 
     const validate = (): boolean => {
         const newErrors: { [key: string]: string } = {};
@@ -327,6 +333,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
                                         value={formData.createdById}
                                         onChange={(e) => setFormData({ ...formData, createdById: e.target.value })}
                                         className={`input ${errors.createdById ? 'input-error' : ''}`}
+                                        disabled={isAsesor}
                                     >
                                         <option value="">Seleccione un asesor</option>
                                         {asesores.map((user) => (
