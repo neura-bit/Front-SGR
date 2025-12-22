@@ -17,6 +17,7 @@ export interface CourierMarker {
 interface GoogleTrackingMapProps {
     couriers: CourierMarker[];
     height?: string;
+    selectedCourierId?: string | null;
     onCourierClick?: (courier: CourierMarker) => void;
 }
 
@@ -62,12 +63,14 @@ const loadGoogleMapsScript = (): Promise<void> => {
 export const GoogleTrackingMap: React.FC<GoogleTrackingMapProps> = ({
     couriers,
     height = '100%',
+    selectedCourierId,
     onCourierClick,
 }) => {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<google.maps.Map | null>(null);
     const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
     const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+    const isInitialLoadRef = useRef(true); // Track if this is the first load
 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -156,6 +159,7 @@ export const GoogleTrackingMap: React.FC<GoogleTrackingMapProps> = ({
                     position,
                     content: markerContent,
                     title: courier.name,
+                    zIndex: 1, // Default z-index
                 });
 
                 // Add click listener
@@ -180,8 +184,8 @@ export const GoogleTrackingMap: React.FC<GoogleTrackingMapProps> = ({
             }
         });
 
-        // Fit bounds to show all markers
-        if (couriers.length > 0) {
+        // Only fit bounds on initial load, not on updates (to preserve user's view)
+        if (couriers.length > 0 && isInitialLoadRef.current) {
             const bounds = new google.maps.LatLngBounds();
             couriers.forEach(courier => {
                 bounds.extend({ lat: courier.latitude, lng: courier.longitude });
@@ -193,8 +197,58 @@ export const GoogleTrackingMap: React.FC<GoogleTrackingMapProps> = ({
             } else {
                 map.fitBounds(bounds, 50);
             }
+
+            isInitialLoadRef.current = false; // Mark initial load as complete
         }
     }, [couriers, isLoading, onCourierClick]);
+
+    // Center map on selected courier and bring to front
+    useEffect(() => {
+        if (!mapInstanceRef.current) return;
+
+        // Reset all markers to default z-index
+        markersRef.current.forEach((marker) => {
+            marker.zIndex = 1;
+            // Remove selected class from marker content
+            if (marker.content instanceof HTMLElement) {
+                marker.content.classList.remove('tracking-marker-selected');
+            }
+        });
+
+        if (!selectedCourierId) return;
+
+        const selectedCourier = couriers.find(c => c.id === selectedCourierId);
+        if (!selectedCourier) return;
+
+        const map = mapInstanceRef.current;
+        const marker = markersRef.current.get(selectedCourierId);
+
+        // Bring selected marker to front
+        if (marker) {
+            marker.zIndex = 1000; // High z-index to be on top
+            // Add selected class for visual highlight
+            if (marker.content instanceof HTMLElement) {
+                marker.content.classList.add('tracking-marker-selected');
+            }
+        }
+
+        // Center and zoom to the selected courier
+        map.setCenter({ lat: selectedCourier.latitude, lng: selectedCourier.longitude });
+        map.setZoom(17);
+
+        // Open the info window for the selected courier
+        if (marker && infoWindowRef.current) {
+            const infoContent = `
+                <div class="tracking-info-window">
+                    <h4>${selectedCourier.name}</h4>
+                    ${selectedCourier.currentTaskName ? `<p><strong>Tarea:</strong> ${selectedCourier.currentTaskName}</p>` : '<p>Sin tarea asignada</p>'}
+                    <p class="tracking-info-time">Última actualización: ${selectedCourier.lastUpdate.toLocaleTimeString()}</p>
+                </div>
+            `;
+            infoWindowRef.current.setContent(infoContent);
+            infoWindowRef.current.open(map, marker);
+        }
+    }, [selectedCourierId, couriers]);
 
     return (
         <div className="google-tracking-map-container" style={{ height }}>

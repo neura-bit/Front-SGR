@@ -19,7 +19,18 @@ export const Tracking: React.FC = () => {
         try {
             setError(null);
             const data = await trackingService.getCurrentPositions();
-            setCouriers(data);
+
+            // Filter to show only today's locations
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const todaysCouriers = data.filter(courier => {
+                const lastUpdateDate = new Date(courier.lastUpdate);
+                lastUpdateDate.setHours(0, 0, 0, 0);
+                return lastUpdateDate.getTime() >= today.getTime();
+            });
+
+            setCouriers(todaysCouriers);
             setLastRefresh(new Date());
         } catch (err: any) {
             const message = err.response?.data?.message || 'Error al cargar ubicaciones';
@@ -145,6 +156,7 @@ export const Tracking: React.FC = () => {
                     <GoogleTrackingMap
                         couriers={courierMarkers}
                         height="calc(100vh - 200px)"
+                        selectedCourierId={selectedCourierId}
                         onCourierClick={handleCourierClick}
                     />
                 </div>

@@ -70,8 +70,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
                 supervisorId: task.supervisorId || '',
             });
         } else {
-            // For new tasks, auto-set status to 'CREADA'
-            const creadaStatus = taskStatuses.find(s => s.name === 'CREADA');
+            // For new tasks, auto-set status to 'PENDIENTE'
+            const pendienteStatus = taskStatuses.find(s => s.name.toUpperCase() === 'PENDIENTE');
             setFormData({
                 nombre: '',
                 codigo: '',
@@ -84,7 +84,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
                 clientId: '',
                 taskTypeId: '',
                 categoryId: '',
-                taskStatusId: creadaStatus?.id || '',
+                taskStatusId: pendienteStatus?.id || '',
                 // Auto-select logged-in user if they are an ASESOR
                 createdById: isAsesor && user?.id ? user.id : '',
                 assignedCourierId: '',
