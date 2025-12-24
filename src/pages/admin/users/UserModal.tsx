@@ -26,6 +26,7 @@ export const UserModal: React.FC<UserModalProps> = ({
         firstName: '',
         lastName: '',
         phone: '',
+        email: '',
         username: '',
         password: '',
         active: true,
@@ -41,6 +42,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
                 phone: user.phone || '',
+                email: user.email || '',
                 username: user.username || '',
                 password: '', // Don't populate password on edit
                 active: user.active,
@@ -52,6 +54,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                 firstName: '',
                 lastName: '',
                 phone: '',
+                email: '',
                 username: '',
                 password: '',
                 active: true,
@@ -104,6 +107,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                     firstName: formData.firstName,
                     lastName: formData.lastName,
                     phone: formData.phone,
+                    email: formData.email,
                     username: formData.username,
                     active: formData.active,
                     branchId: formData.branchId,
@@ -172,14 +176,22 @@ export const UserModal: React.FC<UserModalProps> = ({
                         />
 
                         <Input
-                            label="Usuario *"
-                            type="text"
-                            value={formData.username}
-                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                            error={errors.username}
-                            placeholder="Ej: jperez"
+                            label="Correo"
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            placeholder="Ej: usuario@email.com"
                         />
                     </div>
+
+                    <Input
+                        label="Usuario *"
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        error={errors.username}
+                        placeholder="Ej: jperez"
+                    />
 
                     <Input
                         label={user ? "Contraseña (dejar vacío para no cambiar)" : "Contraseña *"}

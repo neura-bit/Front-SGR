@@ -6,6 +6,7 @@ interface ApiUser {
     nombre: string;
     apellido: string;
     telefono?: string;
+    correo?: string;
     username: string;
     password?: string;
     estado: boolean;
@@ -36,6 +37,7 @@ const mapToUser = (data: any): User => {
         firstName: data.nombre || '',
         lastName: data.apellido || '',
         phone: data.telefono || '',
+        email: data.correo || '',
         username: data.username || '',
         active: data.estado !== undefined ? data.estado : true,
         branchId: String(data.sucursal?.idSucursal || data.idSucursal || ''),
@@ -53,6 +55,7 @@ const mapToApi = (data: Partial<User>): Partial<ApiUser> => {
         nombre: data.firstName,
         apellido: data.lastName,
         telefono: data.phone,
+        correo: data.email,
         username: data.username,
         estado: data.active,
     };

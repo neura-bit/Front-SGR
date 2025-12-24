@@ -141,6 +141,7 @@ export const UserList: React.FC = () => {
                         <tr>
                             <th>Nombre</th>
                             <th>Usuario</th>
+                            <th>Correo</th>
                             <th>Teléfono</th>
                             <th>Sucursal</th>
                             <th>Rol</th>
@@ -160,6 +161,7 @@ export const UserList: React.FC = () => {
                                     </div>
                                 </td>
                                 <td>{user.username}</td>
+                                <td>{user.email || '-'}</td>
                                 <td>{user.phone || '-'}</td>
                                 <td>{getBranchName(user.branchId)}</td>
                                 <td>
