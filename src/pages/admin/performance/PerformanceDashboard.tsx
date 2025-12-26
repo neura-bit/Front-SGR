@@ -25,6 +25,12 @@ import {
     Users,
     Search,
     AlertCircle,
+    Info,
+    HelpCircle,
+    ListChecks,
+    Target,
+    Lightbulb,
+    CircleDot,
 } from 'lucide-react';
 import './PerformanceDashboard.css';
 
@@ -351,6 +357,79 @@ export const PerformanceDashboard: React.FC = () => {
                 </div>
             )}
 
+            {/* Help Section - Collapsible */}
+            <details className="metrics-help-section">
+                <summary className="metrics-help-toggle">
+                    <HelpCircle size={18} />
+                    <span>Guía de Métricas</span>
+                </summary>
+                <div className="metrics-help-content">
+                    <div className="metrics-help-grid">
+                        <div className="metrics-help-card">
+                            <h4><BarChart3 size={16} className="help-icon" /> Métricas Individuales (por tarea)</h4>
+                            <table className="metrics-help-table">
+                                <thead>
+                                    <tr>
+                                        <th>Métrica</th>
+                                        <th>Fórmula</th>
+                                        <th>Descripción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Tiempo Respuesta</strong></td>
+                                        <td><code>fechaInicio - fechaCreacion</code></td>
+                                        <td>Rapidez con que el mensajero responde a una asignación</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Tiempo Ejecución</strong></td>
+                                        <td><code>fechaFin - fechaInicio</code></td>
+                                        <td>Tiempo dedicado al trabajo efectivo</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Tiempo Total</strong></td>
+                                        <td><code>fechaFin - fechaCreacion</code></td>
+                                        <td>Tiempo total desde asignación hasta entrega</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Entrega a Tiempo</strong></td>
+                                        <td><code>fechaFin &lt;= fechaLimite</code></td>
+                                        <td>Si cumplió con el plazo establecido</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="metrics-help-card">
+                            <h4><ListChecks size={16} className="help-icon" /> Métricas Agregadas (por período)</h4>
+                            <ul className="metrics-help-list">
+                                <li><strong>% Cumplimiento:</strong> (Entregas a tiempo ÷ Total entregas) × 100 — KPI principal de puntualidad</li>
+                                <li><strong>Tareas Completadas:</strong> Conteo de tareas con estado "COMPLETADA"</li>
+                                <li><strong>Entregas a Tiempo:</strong> Tareas entregadas dentro del plazo</li>
+                                <li><strong>Entregas Tardías:</strong> Tareas entregadas fuera del plazo</li>
+                            </ul>
+                        </div>
+                        <div className="metrics-help-card">
+                            <h4><Target size={16} className="help-icon" /> Indicadores de Rendimiento</h4>
+                            <div className="performance-indicators">
+                                <span className="indicator-badge indicator-high"><CircleDot size={12} /> ≥85% Excelente</span>
+                                <span className="indicator-badge indicator-medium"><CircleDot size={12} /> 60-84% Regular</span>
+                                <span className="indicator-badge indicator-low"><CircleDot size={12} /> &lt;60% Bajo</span>
+                            </div>
+                        </div>
+                        <div className="metrics-help-card">
+                            <h4><Lightbulb size={16} className="help-icon" /> ¿Para qué sirven?</h4>
+                            <ul className="metrics-help-list compact">
+                                <li>Evaluar rendimiento individual de mensajeros</li>
+                                <li>Comparar eficiencia entre mensajeros</li>
+                                <li>Detectar problemas de capacidad o sobrecarga</li>
+                                <li>Tomar decisiones de asignación de tareas</li>
+                                <li>Generar reportes gerenciales de cumplimiento</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
             {/* KPI Cards */}
             <div className="grid grid-cols-4 kpi-grid">
                 <Card className="kpi-card">
@@ -359,7 +438,16 @@ export const PerformanceDashboard: React.FC = () => {
                     </div>
                     <div className="kpi-content">
                         <div className="kpi-value">{aggregatedMetrics.totalTareasAsignadas}</div>
-                        <div className="kpi-label">Total Tareas Asignadas</div>
+                        <div className="kpi-label">
+                            Total Tareas Asignadas
+                            <span className="tooltip-wrapper">
+                                <Info size={14} className="info-icon" />
+                                <span className="tooltip-content">
+                                    <strong>Total Tareas Asignadas</strong>
+                                    <br />Cantidad de tareas asignadas al mensajero en el período seleccionado. Permite evaluar la carga de trabajo.
+                                </span>
+                            </span>
+                        </div>
                     </div>
                 </Card>
 
@@ -369,7 +457,18 @@ export const PerformanceDashboard: React.FC = () => {
                     </div>
                     <div className="kpi-content">
                         <div className="kpi-value">{aggregatedMetrics.porcentajeCumplimiento.toFixed(1)}%</div>
-                        <div className="kpi-label">% Cumplimiento</div>
+                        <div className="kpi-label">
+                            % Cumplimiento
+                            <span className="tooltip-wrapper">
+                                <Info size={14} className="info-icon" />
+                                <span className="tooltip-content">
+                                    <strong>Porcentaje de Cumplimiento</strong>
+                                    <br /><em>Fórmula: (Entregas a tiempo ÷ Total entregas) × 100</em>
+                                    <br /><br />KPI principal de puntualidad. Indica el porcentaje de tareas entregadas dentro del plazo establecido.
+                                    <br /><br />🟢 ≥85%: Excelente | 🟡 60-84%: Regular | 🔴 &lt;60%: Bajo
+                                </span>
+                            </span>
+                        </div>
                     </div>
                 </Card>
 
@@ -379,7 +478,18 @@ export const PerformanceDashboard: React.FC = () => {
                     </div>
                     <div className="kpi-content">
                         <div className="kpi-value">{formatTime(aggregatedMetrics.tiempoPromedioRespuesta)}</div>
-                        <div className="kpi-label">Tiempo Promedio Respuesta</div>
+                        <div className="kpi-label">
+                            Tiempo Promedio Respuesta
+                            <span className="tooltip-wrapper">
+                                <Info size={14} className="info-icon" />
+                                <span className="tooltip-content">
+                                    <strong>Tiempo Promedio de Respuesta</strong>
+                                    <br /><em>Fórmula: Fecha Inicio - Fecha Creación</em>
+                                    <br /><br />Mide qué tan rápido el mensajero responde a una asignación. Se calcula desde que se crea la tarea hasta que el mensajero la inicia.
+                                    <br /><br />Un tiempo bajo indica rapidez de reacción ante nuevas asignaciones.
+                                </span>
+                            </span>
+                        </div>
                     </div>
                 </Card>
 
@@ -389,7 +499,18 @@ export const PerformanceDashboard: React.FC = () => {
                     </div>
                     <div className="kpi-content">
                         <div className="kpi-value">{formatTime(aggregatedMetrics.tiempoPromedioEjecucion)}</div>
-                        <div className="kpi-label">Tiempo Promedio Ejecución</div>
+                        <div className="kpi-label">
+                            Tiempo Promedio Ejecución
+                            <span className="tooltip-wrapper">
+                                <Info size={14} className="info-icon" />
+                                <span className="tooltip-content">
+                                    <strong>Tiempo Promedio de Ejecución</strong>
+                                    <br /><em>Fórmula: Fecha Fin - Fecha Inicio</em>
+                                    <br /><br />Mide cuánto tiempo dedica el mensajero al trabajo efectivo. Se calcula desde que inicia la tarea hasta que la finaliza.
+                                    <br /><br />Permite evaluar la eficiencia operativa del mensajero.
+                                </span>
+                            </span>
+                        </div>
                     </div>
                 </Card>
             </div>
