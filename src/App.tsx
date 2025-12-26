@@ -16,6 +16,7 @@ import { TaskTypeList } from './pages/admin/task-types/TaskTypeList';
 import { UserList } from './pages/admin/users/UserList';
 import { TaskList } from './pages/admin/tasks/TaskList.tsx';
 import { Tracking } from './pages/admin/Tracking';
+import { PerformanceDashboard } from './pages/admin/performance/PerformanceDashboard';
 import { AsesorTaskList } from './pages/asesor/tasks/AsesorTaskList';
 
 function App() {
@@ -63,7 +64,7 @@ function App() {
       >
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="tracking" element={<Tracking />} />
-        <Route path="performance" element={<div className="animate-fade-in"><h1>Análisis de Rendimiento</h1><p className="text-secondary">Funcionalidad en desarrollo</p></div>} />
+        <Route path="performance" element={<PerformanceDashboard />} />
         <Route path="users" element={<UserList />} />
         <Route path="task-types" element={<TaskTypeList />} />
         <Route path="clients" element={<ClientList />} />
