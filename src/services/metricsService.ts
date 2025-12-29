@@ -78,4 +78,42 @@ export const metricsService = {
             ? response.data
             : (response.data.mensajeros || response.data.data || []);
     },
+
+    /**
+     * Get comparative/ranking metrics for messengers of a specific branch
+     */
+    getComparativeMetricsBySucursal: async (
+        idSucursal: number,
+        fechaInicio: string,
+        fechaFin: string
+    ): Promise<MensajeroMetrics[]> => {
+        const response = await api.get(
+            `/metricas/mensajeros/sucursal/${idSucursal}/comparativo`,
+            {
+                params: { fechaInicio, fechaFin }
+            }
+        );
+        // The API might return wrapped data or direct array
+        return Array.isArray(response.data)
+            ? response.data
+            : (response.data.mensajeros || response.data.data || []);
+    },
+
+    /**
+     * Get metrics for a specific messenger within a branch
+     */
+    getMensajeroMetricsBySucursal: async (
+        idSucursal: number,
+        idMensajero: number,
+        fechaInicio: string,
+        fechaFin: string
+    ): Promise<MensajeroMetrics> => {
+        const response = await api.get(
+            `/metricas/mensajeros/sucursal/${idSucursal}/mensajero/${idMensajero}`,
+            {
+                params: { fechaInicio, fechaFin }
+            }
+        );
+        return response.data;
+    },
 };

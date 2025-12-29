@@ -16,7 +16,8 @@ import { Input } from '../../../components/ui/Input';
 import { metricsService } from '../../../services/metricsService';
 import type { MensajeroMetrics } from '../../../services/metricsService';
 import { userService } from '../../../services/userService';
-import type { User } from '../../../types';
+import { branchService } from '../../../services/branchService';
+import type { User, Branch } from '../../../types';
 import {
     BarChart3,
     Clock,
@@ -55,44 +56,88 @@ export const PerformanceDashboard: React.FC = () => {
     const [fechaFin, setFechaFin] = useState<string>(() => {
         return new Date().toISOString().split('T')[0];
     });
+    const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [selectedMensajero, setSelectedMensajero] = useState<string>('all');
 
     // State for data
+    const [sucursales, setSucursales] = useState<Branch[]>([]);
     const [mensajeros, setMensajeros] = useState<User[]>([]);
+    const [filteredMensajeros, setFilteredMensajeros] = useState<User[]>([]);
     const [metricsData, setMetricsData] = useState<MensajeroMetrics[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Load messengers on mount
+    // Load branches and messengers on mount
     useEffect(() => {
-        const loadMensajeros = async () => {
+        const loadInitialData = async () => {
             try {
-                const users = await userService.getAll();
-                const messengerUsers = users.filter(u => u.role === 'MENSAJERO');
+                const [branchesData, usersData] = await Promise.all([
+                    branchService.getAll(),
+                    userService.getAll()
+                ]);
+                setSucursales(branchesData);
+                const messengerUsers = usersData.filter(u => u.role === 'MENSAJERO');
                 setMensajeros(messengerUsers);
+                setFilteredMensajeros(messengerUsers);
             } catch (err) {
-                console.error('Error loading messengers:', err);
+                console.error('Error loading initial data:', err);
             }
         };
-        loadMensajeros();
+        loadInitialData();
     }, []);
+
+    // Filter messengers when branch changes
+    useEffect(() => {
+        if (selectedSucursal === 'all') {
+            setFilteredMensajeros(mensajeros);
+        } else {
+            const filtered = mensajeros.filter(m => m.branchId === selectedSucursal);
+            setFilteredMensajeros(filtered);
+        }
+        // Reset messenger selection when branch changes
+        setSelectedMensajero('all');
+    }, [selectedSucursal, mensajeros]);
 
     // Load metrics
     const loadMetrics = async () => {
         setLoading(true);
         setError(null);
         try {
-            if (selectedMensajero === 'all') {
-                const data = await metricsService.getComparativeMetrics(fechaInicio, fechaFin);
-                setMetricsData(data);
+            let data: MensajeroMetrics[];
+
+            if (selectedSucursal === 'all') {
+                // No branch filter
+                if (selectedMensajero === 'all') {
+                    data = await metricsService.getComparativeMetrics(fechaInicio, fechaFin);
+                } else {
+                    const singleData = await metricsService.getMensajeroMetrics(
+                        parseInt(selectedMensajero),
+                        fechaInicio,
+                        fechaFin
+                    );
+                    data = [singleData];
+                }
             } else {
-                const data = await metricsService.getMensajeroMetrics(
-                    parseInt(selectedMensajero),
-                    fechaInicio,
-                    fechaFin
-                );
-                setMetricsData([data]);
+                // With branch filter
+                const idSucursal = parseInt(selectedSucursal);
+                if (selectedMensajero === 'all') {
+                    data = await metricsService.getComparativeMetricsBySucursal(
+                        idSucursal,
+                        fechaInicio,
+                        fechaFin
+                    );
+                } else {
+                    const singleData = await metricsService.getMensajeroMetricsBySucursal(
+                        idSucursal,
+                        parseInt(selectedMensajero),
+                        fechaInicio,
+                        fechaFin
+                    );
+                    data = [singleData];
+                }
             }
+
+            setMetricsData(data);
         } catch (err: any) {
             console.error('Error loading metrics:', err);
             setError(err.response?.data?.message || 'Error al cargar las métricas');
@@ -324,6 +369,21 @@ export const PerformanceDashboard: React.FC = () => {
                         />
                     </div>
                     <div className="filter-group">
+                        <label>Sucursal</label>
+                        <select
+                            className="filter-select"
+                            value={selectedSucursal}
+                            onChange={(e) => setSelectedSucursal(e.target.value)}
+                        >
+                            <option value="all">Todas las sucursales</option>
+                            {sucursales.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                    {s.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="filter-group">
                         <label>Mensajero</label>
                         <select
                             className="filter-select"
@@ -331,7 +391,7 @@ export const PerformanceDashboard: React.FC = () => {
                             onChange={(e) => setSelectedMensajero(e.target.value)}
                         >
                             <option value="all">Todos los mensajeros</option>
-                            {mensajeros.map((m) => (
+                            {filteredMensajeros.map((m) => (
                                 <option key={m.id} value={m.id}>
                                     {m.name}
                                 </option>
