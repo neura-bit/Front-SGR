@@ -7,9 +7,9 @@ import './MainLayout.css';
 export const MainLayout: React.FC = () => {
     return (
         <div className="main-layout">
-            <Sidebar />
-            <div className="main-layout-content">
-                <Header />
+            <Header />
+            <div className="layout-body">
+                <Sidebar />
                 <main className="main-content">
                     <Outlet />
                 </main>

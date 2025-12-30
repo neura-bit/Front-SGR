@@ -1,7 +1,7 @@
 .sidebar {
     position: fixed;
     left: 0;
-    top: 0;
+    top: 72px;
     bottom: 0;
     width: 260px;
     background: var(--color-surface);

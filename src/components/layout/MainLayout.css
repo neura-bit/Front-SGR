@@ -1,25 +1,28 @@
 .main-layout {
     display: flex;
+    flex-direction: column;
     min-height: 100vh;
     background: var(--color-bg);
 }
 
-.main-layout-content {
-    flex: 1;
+.layout-body {
     display: flex;
-    flex-direction: column;
-    margin-left: 260px;
-    transition: margin-left var(--transition-base);
+    flex: 1;
+    position: relative;
 }
 
 .main-content {
     flex: 1;
     padding: var(--spacing-xl);
     animation: fadeIn 0.3s ease-out;
+    margin-left: 260px;
+    /* Space for fixed sidebar */
+    transition: margin-left var(--transition-base);
+    width: 100%;
 }
 
 @media (max-width: 1024px) {
-    .main-layout-content {
+    .main-content {
         margin-left: 0;
     }
 }
