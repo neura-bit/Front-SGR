@@ -1,55 +1,50 @@
 .sidebar {
-    position: fixed;
-    left: 0;
-    top: 72px;
-    bottom: 0;
-    width: 260px;
-    background: var(--color-surface);
-    border-right: 1px solid var(--color-border);
+    width: 72px;
+    min-width: 72px;
+    background: linear-gradient(180deg, #18181b 0%, #09090b 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     flex-direction: column;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
     z-index: 100;
-    animation: slideIn 0.3s ease-out;
 }
 
-.sidebar-header {
-    padding: var(--spacing-xl);
-    border-bottom: 1px solid var(--color-border);
-    text-align: center;
-}
-
-.sidebar-logo {
-    display: inline-flex;
-    padding: var(--spacing-md);
-    background: var(--gradient-primary);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--spacing-md);
-}
-
-.sidebar-logo svg {
-    color: white;
-}
-
-.sidebar-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    margin: 0;
-    background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.sidebar-subtitle {
-    font-size: 0.75rem;
-    color: var(--color-text-tertiary);
-    margin-top: 0.25rem;
+/* Mejorada la expansión con sombra suave */
+.sidebar:hover {
+    width: 280px;
+    min-width: 280px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
 }
 
 .sidebar-nav {
     flex: 1;
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg) var(--spacing-md);
     overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Scrollbar personalizada para webkit browsers */
+.sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    transition: background 0.2s;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .sidebar-link {
@@ -57,69 +52,206 @@
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
-    border-radius: var(--radius-md);
-    color: var(--color-text-secondary);
+    padding-left: 12px;
+    border-radius: var(--radius-lg);
+    color: rgba(255, 255, 255, 0.6);
     text-decoration: none;
-    transition: all var(--transition-base);
-    margin-bottom: 0.25rem;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: var(--spacing-sm);
     position: relative;
+    white-space: nowrap;
+    height: 48px;
+    overflow: hidden;
 }
 
+/* Mejorados los efectos hover con transformación sutil */
 .sidebar-link:hover {
-    background: var(--color-surface-elevated);
-    color: var(--color-text-primary);
-    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* Estado activo con mejor indicador visual */
 .sidebar-link-active {
-    background: var(--gradient-primary);
-    color: white !important;
-    box-shadow: var(--shadow-md);
+    background: linear-gradient(90deg, rgba(217, 119, 6, 0.15) 0%, rgba(217, 119, 6, 0.05) 100%);
+    color: #ffffff !important;
+    font-weight: 600;
 }
 
+.sidebar-link-active:hover {
+    background: linear-gradient(90deg, rgba(217, 119, 6, 0.2) 0%, rgba(217, 119, 6, 0.08) 100%);
+    transform: translateX(2px);
+}
+
+/* Indicador lateral más prominente con animación */
 .sidebar-link-active::before {
-    content: '';
+    content: "";
     position: absolute;
     left: 0;
     top: 50%;
     transform: translateY(-50%);
-    width: 3px;
+    width: 4px;
     height: 60%;
-    background: white;
+    background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+    animation: pulseIndicator 2s ease-in-out infinite;
+}
+
+@keyframes pulseIndicator {
+
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+    }
+
+    50% {
+        opacity: 0.8;
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.7);
+    }
 }
 
 .sidebar-link-icon {
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    transition: transform 0.25s ease;
+}
+
+/* Icono se escala ligeramente en hover */
+.sidebar-link:hover .sidebar-link-icon {
+    transform: scale(1.1);
 }
 
 .sidebar-link-label {
-    font-size: 0.875rem;
+    font-size: 0.9rem;
     font-weight: 500;
+    opacity: 0;
+    transform: translateX(-12px);
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.05s, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.05s;
 }
 
-.sidebar-footer {
-    padding: var(--spacing-md);
-    border-top: 1px solid var(--color-border);
+/* Labels aparecen con animación escalonada */
+.sidebar:hover .sidebar-link-label {
+    opacity: 1;
+    transform: translateX(0);
 }
 
-.sidebar-role-badge {
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--color-surface-elevated);
-    border-radius: var(--radius-md);
-    text-align: center;
-    font-weight: 700;
-    color: var(--color-primary-light);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+/* Tooltip mejorado para sidebar colapsado */
+.sidebar-link::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 72px;
+    top: 50%;
+    transform: translateY(-50%) translateX(-8px);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.sidebar:not(:hover) .sidebar-link:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Responsive mejorado para tablets */
 @media (max-width: 1024px) {
     .sidebar {
+        position: fixed;
+        left: 0;
+        top: 72px;
+        bottom: 0;
+        z-index: 1000;
         transform: translateX(-100%);
+        width: 280px;
+        box-shadow: none;
     }
 
-    /* Add mobile menu toggle functionality if needed */
+    .sidebar:hover {
+        transform: translateX(-100%);
+        width: 280px;
+    }
+
+    .sidebar.sidebar-mobile-open {
+        transform: translateX(0);
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .sidebar-link-label {
+        opacity: 1;
+        transform: none;
+    }
+
+    /* Desactivar tooltips en móvil */
+    .sidebar-link::after {
+        display: none;
+    }
+}
+
+/* Ajustes específicos para móviles pequeños */
+@media (max-width: 640px) {
+    .sidebar {
+        width: 100%;
+        max-width: 280px;
+    }
+
+    .sidebar-link {
+        padding: var(--spacing-md) var(--spacing-lg);
+        height: 52px;
+    }
+
+    .sidebar-link-icon {
+        width: 24px;
+        height: 24px;
+    }
+
+    .sidebar-link-label {
+        font-size: 0.95rem;
+    }
+}
+
+/* Animación de entrada suave */
+@keyframes slideInFromLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.sidebar-mobile-open {
+    animation: slideInFromLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Mejora de accesibilidad - focus states */
+.sidebar-link:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Mejor rendimiento en dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+    .sidebar-link:active {
+        background: rgba(255, 255, 255, 0.15);
+        transform: scale(0.98);
+    }
 }

@@ -8,17 +8,28 @@
 .layout-body {
     display: flex;
     flex: 1;
-    position: relative;
+    overflow: hidden;
 }
 
 .main-content {
     flex: 1;
     padding: var(--spacing-xl);
     animation: fadeIn 0.3s ease-out;
-    margin-left: 260px;
-    /* Space for fixed sidebar */
-    transition: margin-left var(--transition-base);
-    width: 100%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    min-width: 0;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @media (max-width: 1024px) {
@@ -30,5 +41,40 @@
 @media (max-width: 640px) {
     .main-content {
         padding: var(--spacing-md);
+    }
+}
+
+/* Overlay mejorado con mejor backdrop blur */
+.sidebar-overlay {
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 900;
+    animation: fadeInOverlay 0.25s ease-out;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+@keyframes fadeInOverlay {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Prevenir scroll del body cuando el sidebar está abierto en móvil */
+.layout-body.mobile-open {
+    overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+    body:has(.sidebar-mobile-open) {
+        overflow: hidden;
     }
 }
