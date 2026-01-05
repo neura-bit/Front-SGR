@@ -1,254 +1,314 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
-import './GoogleTrackingMap.css';
+"use client"
 
-// Google Maps API Key (same as GoogleAddressPicker)
-const GOOGLE_MAPS_API_KEY = 'AIzaSyDCINY7fSZwHI0OzGu6Lq8j1OYvjQkTsDI';
+import type React from "react"
+import { useEffect, useRef, useState } from "react"
+import { RefreshCw } from "lucide-react"
+import "./GoogleTrackingMap.css"
+
+const GOOGLE_MAPS_API_KEY = "AIzaSyDCINY7fSZwHI0OzGu6Lq8j1OYvjQkTsDI" // Declare the variable here
 
 export interface CourierMarker {
-    id: string;
-    name: string;
-    latitude: number;
-    longitude: number;
-    currentTaskName?: string | null;
-    lastUpdate: Date;
+    id: string
+    name: string
+    latitude: number
+    longitude: number
+    currentTaskName?: string | null
+    lastUpdate: Date
+    profilePhoto?: string | null
 }
 
 interface GoogleTrackingMapProps {
-    couriers: CourierMarker[];
-    height?: string;
-    selectedCourierId?: string | null;
-    onCourierClick?: (courier: CourierMarker) => void;
+    couriers: CourierMarker[]
+    height?: string
+    selectedCourierId?: string | null
+    onCourierClick?: (courier: CourierMarker) => void
 }
 
 // Load Google Maps script - shared promise to avoid loading conflicts
-let googleMapsPromise: Promise<void> | null = null;
+let googleMapsPromise: Promise<void> | null = null
 
 const loadGoogleMapsScript = (): Promise<void> => {
-    if (googleMapsPromise) return googleMapsPromise;
-
-    if (window.google?.maps) {
-        return Promise.resolve();
+    // If maps is already loaded, resolve immediately
+    if (typeof window !== "undefined" && window.google?.maps) {
+        return Promise.resolve()
     }
 
-    // Check if another script is already loading Google Maps
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
-    if (existingScript) {
-        // Wait for the existing script to load
-        googleMapsPromise = new Promise((resolve) => {
-            const checkLoaded = setInterval(() => {
-                if (window.google?.maps) {
-                    clearInterval(checkLoaded);
-                    resolve();
-                }
-            }, 100);
-        });
-        return googleMapsPromise;
-    }
+    // If loading is already in progress, return the existing promise
+    if (googleMapsPromise) return googleMapsPromise
 
     googleMapsPromise = new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        // Load with both places and marker libraries, and use loading=async
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,marker&loading=async`;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load Google Maps'));
-        document.head.appendChild(script);
-    });
+        // Double check inside promise
+        if (typeof window !== "undefined" && window.google?.maps) {
+            resolve()
+            return
+        }
 
-    return googleMapsPromise;
-};
+        if (typeof document === "undefined") {
+            reject(new Error("Document is not available"))
+            return
+        }
+
+        // Check if another script is already inserted but not yet loaded
+        const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]')
+
+        if (existingScript) {
+            // Wait for the existing script to load
+            let attempts = 0
+            const maxAttempts = 50 // 5 seconds
+            const checkLoaded = setInterval(() => {
+                attempts++
+                if (typeof window !== "undefined" && window.google?.maps) {
+                    clearInterval(checkLoaded)
+                    resolve()
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkLoaded)
+                    // Don't reject yet, maybe it's just slow, but stop checking interval
+                    // If it eventually loads, next call will catch it. 
+                    // But for this promise, we timeout to avoid hanging forever.
+                    reject(new Error("Timeout waiting for Google Maps to load"))
+                    googleMapsPromise = null // Reset so we can try again
+                }
+            }, 100)
+            return
+        }
+
+        // Create and insert script
+        const script = document.createElement("script")
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,marker&loading=async`
+        script.async = true
+        script.defer = true
+
+        script.onload = () => {
+            // Wait a tick to ensure window.google is populated
+            setTimeout(() => {
+                if (typeof window !== "undefined" && window.google?.maps) {
+                    resolve()
+                } else {
+                    reject(new Error("Script loaded but google.maps not found"))
+                    googleMapsPromise = null
+                }
+            }, 100)
+        }
+
+        script.onerror = () => {
+            reject(new Error("Failed to load Google Maps script"))
+            googleMapsPromise = null // Reset so we can try again
+        }
+
+        document.head.appendChild(script)
+    })
+
+    return googleMapsPromise
+}
 
 export const GoogleTrackingMap: React.FC<GoogleTrackingMapProps> = ({
     couriers,
-    height = '100%',
+    height = "100%",
     selectedCourierId,
     onCourierClick,
 }) => {
-    const mapRef = useRef<HTMLDivElement>(null);
-    const mapInstanceRef = useRef<google.maps.Map | null>(null);
-    const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
-    const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
-    const isInitialLoadRef = useRef(true); // Track if this is the first load
+    const mapRef = useRef<HTMLDivElement>(null)
+    const mapInstanceRef = useRef<google.maps.Map | null>(null)
+    const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map())
+    const infoWindowRef = useRef<google.maps.InfoWindow | null>(null)
+    const isInitialLoadRef = useRef(true) // Track if this is the first load
 
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
     // Initialize map
     useEffect(() => {
-        let isMounted = true;
+        let isMounted = true
 
         const initMap = async () => {
             try {
-                await loadGoogleMapsScript();
+                await loadGoogleMapsScript()
 
-                if (!isMounted || !mapRef.current) return;
+                if (!isMounted || !mapRef.current || typeof window === "undefined" || !window.google) return
 
                 // Default center (Quito, Ecuador)
-                const defaultCenter = { lat: -0.1937, lng: -78.4920 };
+                const defaultCenter = { lat: -0.1937, lng: -78.492 }
 
-                const map = new google.maps.Map(mapRef.current, {
+                const map = new window.google.maps.Map(mapRef.current, {
                     center: defaultCenter,
                     zoom: 13,
-                    mapId: 'TRACKING_MAP_ID',
+                    mapId: "TRACKING_MAP_ID",
                     disableDefaultUI: false,
                     zoomControl: true,
                     mapTypeControl: false,
                     streetViewControl: false,
                     fullscreenControl: true,
-                    // Note: styles cannot be used when mapId is present
-                    // Map styles should be configured in the Google Cloud Console
-                });
+                })
 
-                mapInstanceRef.current = map;
-                infoWindowRef.current = new google.maps.InfoWindow();
+                mapInstanceRef.current = map
+                infoWindowRef.current = new window.google.maps.InfoWindow()
 
-                setIsLoading(false);
+                setIsLoading(false)
             } catch (err) {
                 if (isMounted) {
-                    setError('Error al cargar Google Maps');
-                    setIsLoading(false);
+                    setError("Error al cargar Google Maps")
+                    setIsLoading(false)
                 }
             }
-        };
+        }
 
-        initMap();
+        initMap()
 
         return () => {
-            isMounted = false;
-        };
-    }, []);
+            isMounted = false
+        }
+    }, [])
 
     // Update markers when couriers change
     useEffect(() => {
-        if (!mapInstanceRef.current || isLoading) return;
+        if (!mapInstanceRef.current || isLoading || typeof window === "undefined" || !window.google) return
 
-        const map = mapInstanceRef.current;
-        const currentMarkerIds = new Set(couriers.map(c => c.id));
+        const map = mapInstanceRef.current
+        const currentMarkerIds = new Set(couriers.map((c) => c.id))
 
         // Remove markers that are no longer in the list
         markersRef.current.forEach((marker, id) => {
             if (!currentMarkerIds.has(id)) {
-                marker.map = null;
-                markersRef.current.delete(id);
+                marker.map = null
+                markersRef.current.delete(id)
             }
-        });
+        })
 
         // Add or update markers
-        couriers.forEach(courier => {
-            const position = { lat: courier.latitude, lng: courier.longitude };
+        couriers.forEach((courier) => {
+            const position = { lat: courier.latitude, lng: courier.longitude }
 
             if (markersRef.current.has(courier.id)) {
                 // Update existing marker position
-                const marker = markersRef.current.get(courier.id)!;
-                marker.position = position;
-            } else {
-                // Create new marker
-                const markerContent = document.createElement('div');
-                markerContent.className = 'tracking-marker';
+                const marker = markersRef.current.get(courier.id)!
+                marker.position = position
+
+                // Update marker content (for photo changes)
+                // We recreate the content to ensure the latest photo/initial is shown
+                const markerContent = document.createElement("div")
+                markerContent.className = "tracking-marker"
+
+                // Show profile photo if available, otherwise show initial
+                const avatarContent = courier.profilePhoto
+                    ? `<img src="${courier.profilePhoto}" alt="${courier.name}" class="tracking-marker-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                       <span class="tracking-marker-initial" style="display:none;">${courier.name.charAt(0).toUpperCase()}</span>`
+                    : `<span class="tracking-marker-initial">${courier.name.charAt(0).toUpperCase()}</span>`
+
                 markerContent.innerHTML = `
                     <div class="tracking-marker-pin">
-                        <span class="tracking-marker-initial">${courier.name.charAt(0).toUpperCase()}</span>
+                        ${avatarContent}
                     </div>
                     <div class="tracking-marker-pulse"></div>
-                `;
+                `
+                marker.content = markerContent
+            } else {
+                // Create new marker
+                const markerContent = document.createElement("div")
+                markerContent.className = "tracking-marker"
 
-                const marker = new google.maps.marker.AdvancedMarkerElement({
+                // Show profile photo if available, otherwise show initial
+                const avatarContent = courier.profilePhoto
+                    ? `<img src="${courier.profilePhoto}" alt="${courier.name}" class="tracking-marker-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                       <span class="tracking-marker-initial" style="display:none;">${courier.name.charAt(0).toUpperCase()}</span>`
+                    : `<span class="tracking-marker-initial">${courier.name.charAt(0).toUpperCase()}</span>`
+
+                markerContent.innerHTML = `
+                    <div class="tracking-marker-pin">
+                        ${avatarContent}
+                    </div>
+                    <div class="tracking-marker-pulse"></div>
+                `
+
+                const marker = new window.google.maps.marker.AdvancedMarkerElement({
                     map,
                     position,
                     content: markerContent,
                     title: courier.name,
-                    zIndex: 1, // Default z-index
-                });
+                    zIndex: 1,
+                })
 
                 // Add click listener
-                marker.addListener('click', () => {
+                marker.addListener("click", () => {
                     const infoContent = `
                         <div class="tracking-info-window">
                             <h4>${courier.name}</h4>
-                            ${courier.currentTaskName ? `<p><strong>Tarea:</strong> ${courier.currentTaskName}</p>` : '<p>Sin tarea asignada</p>'}
+                            ${courier.currentTaskName ? `<p><strong>Tarea:</strong> ${courier.currentTaskName}</p>` : "<p>Sin tarea asignada</p>"}
                             <p class="tracking-info-time">Última actualización: ${courier.lastUpdate.toLocaleTimeString()}</p>
                         </div>
-                    `;
+                    `
 
-                    infoWindowRef.current?.setContent(infoContent);
-                    infoWindowRef.current?.open(map, marker);
+                    infoWindowRef.current?.setContent(infoContent)
+                    infoWindowRef.current?.open(map, marker)
 
                     if (onCourierClick) {
-                        onCourierClick(courier);
+                        onCourierClick(courier)
                     }
-                });
+                })
 
-                markersRef.current.set(courier.id, marker);
+                markersRef.current.set(courier.id, marker)
             }
-        });
+        })
 
         // Only fit bounds on initial load, not on updates (to preserve user's view)
         if (couriers.length > 0 && isInitialLoadRef.current) {
-            const bounds = new google.maps.LatLngBounds();
-            couriers.forEach(courier => {
-                bounds.extend({ lat: courier.latitude, lng: courier.longitude });
-            });
+            const bounds = new window.google.maps.LatLngBounds()
+            couriers.forEach((courier) => {
+                bounds.extend({ lat: courier.latitude, lng: courier.longitude })
+            })
 
             if (couriers.length === 1) {
-                map.setCenter({ lat: couriers[0].latitude, lng: couriers[0].longitude });
-                map.setZoom(15);
+                map.setCenter({ lat: couriers[0].latitude, lng: couriers[0].longitude })
+                map.setZoom(15)
             } else {
-                map.fitBounds(bounds, 50);
+                map.fitBounds(bounds, 50)
             }
 
-            isInitialLoadRef.current = false; // Mark initial load as complete
+            isInitialLoadRef.current = false
         }
-    }, [couriers, isLoading, onCourierClick]);
+    }, [couriers, isLoading, onCourierClick])
 
     // Center map on selected courier and bring to front
     useEffect(() => {
-        if (!mapInstanceRef.current) return;
+        if (!mapInstanceRef.current) return
 
         // Reset all markers to default z-index
         markersRef.current.forEach((marker) => {
-            marker.zIndex = 1;
-            // Remove selected class from marker content
+            marker.zIndex = 1
             if (marker.content instanceof HTMLElement) {
-                marker.content.classList.remove('tracking-marker-selected');
+                marker.content.classList.remove("tracking-marker-selected")
             }
-        });
+        })
 
-        if (!selectedCourierId) return;
+        if (!selectedCourierId) return
 
-        const selectedCourier = couriers.find(c => c.id === selectedCourierId);
-        if (!selectedCourier) return;
+        const selectedCourier = couriers.find((c) => c.id === selectedCourierId)
+        if (!selectedCourier) return
 
-        const map = mapInstanceRef.current;
-        const marker = markersRef.current.get(selectedCourierId);
+        const map = mapInstanceRef.current
+        const marker = markersRef.current.get(selectedCourierId)
 
-        // Bring selected marker to front
         if (marker) {
-            marker.zIndex = 1000; // High z-index to be on top
-            // Add selected class for visual highlight
+            marker.zIndex = 1000
             if (marker.content instanceof HTMLElement) {
-                marker.content.classList.add('tracking-marker-selected');
+                marker.content.classList.add("tracking-marker-selected")
             }
         }
 
-        // Center and zoom to the selected courier
-        map.setCenter({ lat: selectedCourier.latitude, lng: selectedCourier.longitude });
-        map.setZoom(17);
+        map.setCenter({ lat: selectedCourier.latitude, lng: selectedCourier.longitude })
+        map.setZoom(17)
 
-        // Open the info window for the selected courier
         if (marker && infoWindowRef.current) {
             const infoContent = `
                 <div class="tracking-info-window">
                     <h4>${selectedCourier.name}</h4>
-                    ${selectedCourier.currentTaskName ? `<p><strong>Tarea:</strong> ${selectedCourier.currentTaskName}</p>` : '<p>Sin tarea asignada</p>'}
+                    ${selectedCourier.currentTaskName ? `<p><strong>Tarea:</strong> ${selectedCourier.currentTaskName}</p>` : "<p>Sin tarea asignada</p>"}
                     <p class="tracking-info-time">Última actualización: ${selectedCourier.lastUpdate.toLocaleTimeString()}</p>
                 </div>
-            `;
-            infoWindowRef.current.setContent(infoContent);
-            infoWindowRef.current.open(map, marker);
+            `
+            infoWindowRef.current.setContent(infoContent)
+            infoWindowRef.current.open(map, marker)
         }
-    }, [selectedCourierId, couriers]);
+    }, [selectedCourierId, couriers])
 
     return (
         <div className="google-tracking-map-container" style={{ height }}>
@@ -265,5 +325,5 @@ export const GoogleTrackingMap: React.FC<GoogleTrackingMapProps> = ({
             )}
             <div ref={mapRef} className="google-tracking-map" />
         </div>
-    );
-};
+    )
+}

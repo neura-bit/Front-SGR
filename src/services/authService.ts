@@ -16,6 +16,7 @@ export interface LoginResponse {
     rol: string;
     idUsuario: number;
     expiresIn: number;
+    fotoPerfil: string | null;
 }
 
 export interface AuthUser {
@@ -28,6 +29,7 @@ export interface AuthUser {
     role: UserRole;
     token: string;
     expiresAt: number;
+    profilePhoto?: string | null;
 }
 
 const TOKEN_KEY = 'sgr_auth_token';
@@ -71,6 +73,7 @@ export const authService = {
             role: mapRoleToUserRole(data.rol),
             token: data.token,
             expiresAt,
+            profilePhoto: data.fotoPerfil,
         };
 
         // Store in localStorage

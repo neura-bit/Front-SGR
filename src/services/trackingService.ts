@@ -8,6 +8,7 @@ export interface CourierTrackingData {
     latitud: number;
     longitud: number;
     fechaUltimaActualizacion: string;
+    fotoPerfil: string | null;
 }
 
 export interface CourierPosition {
@@ -18,6 +19,7 @@ export interface CourierPosition {
     latitude: number;
     longitude: number;
     lastUpdate: Date;
+    profilePhoto: string | null;
 }
 
 const mapToCourierPosition = (data: CourierTrackingData): CourierPosition => ({
@@ -28,6 +30,7 @@ const mapToCourierPosition = (data: CourierTrackingData): CourierPosition => ({
     latitude: data.latitud,
     longitude: data.longitud,
     lastUpdate: new Date(data.fechaUltimaActualizacion),
+    profilePhoto: data.fotoPerfil || null,
 });
 
 export const trackingService = {

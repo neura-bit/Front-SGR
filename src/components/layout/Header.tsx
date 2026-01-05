@@ -49,7 +49,21 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 <div className="header-actions">
                     <div className="user-info">
                         <div className="user-avatar">
-                            <User size={20} />
+                            {user?.profilePhoto ? (
+                                <img
+                                    src={user.profilePhoto}
+                                    alt={user.name}
+                                    className="user-avatar-img"
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        target.nextElementSibling?.classList.remove('hidden');
+                                    }}
+                                />
+                            ) : null}
+                            <div className={`user-avatar-icon ${user?.profilePhoto ? 'hidden' : ''}`}>
+                                <User size={20} />
+                            </div>
                         </div>
                         <div className="user-details">
                             <div className="user-name">{user?.name}</div>
