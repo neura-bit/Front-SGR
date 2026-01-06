@@ -47,10 +47,47 @@ ChartJS.register(
 );
 
 export const PerformanceDashboard: React.FC = () => {
+    // Date filter type
+    type DateFilterType = 'today' | 'last7days' | 'last30days' | 'thisMonth' | 'custom';
+    const [dateFilter, setDateFilter] = useState<DateFilterType>('last30days');
+
+    // Helper function to calculate dates based on filter
+    const getDateRange = (filter: DateFilterType): { start: string; end: string } => {
+        const today = new Date();
+        const endDate = today.toISOString().split('T')[0];
+        let startDate: string;
+
+        switch (filter) {
+            case 'today':
+                startDate = endDate;
+                break;
+            case 'last7days':
+                const last7 = new Date(today);
+                last7.setDate(today.getDate() - 7);
+                startDate = last7.toISOString().split('T')[0];
+                break;
+            case 'last30days':
+                const last30 = new Date(today);
+                last30.setDate(today.getDate() - 30);
+                startDate = last30.toISOString().split('T')[0];
+                break;
+            case 'thisMonth':
+                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                startDate = firstDay.toISOString().split('T')[0];
+                break;
+            case 'custom':
+            default:
+                startDate = fechaInicio;
+                break;
+        }
+
+        return { start: startDate, end: endDate };
+    };
+
     // State for filters
     const [fechaInicio, setFechaInicio] = useState<string>(() => {
         const date = new Date();
-        date.setMonth(date.getMonth() - 1);
+        date.setDate(date.getDate() - 30);
         return date.toISOString().split('T')[0];
     });
     const [fechaFin, setFechaFin] = useState<string>(() => {
@@ -58,6 +95,16 @@ export const PerformanceDashboard: React.FC = () => {
     });
     const [selectedSucursal, setSelectedSucursal] = useState<string>('all');
     const [selectedMensajero, setSelectedMensajero] = useState<string>('all');
+
+    // Update dates when filter type changes
+    const handleDateFilterChange = (filter: DateFilterType) => {
+        setDateFilter(filter);
+        if (filter !== 'custom') {
+            const { start, end } = getDateRange(filter);
+            setFechaInicio(start);
+            setFechaFin(end);
+        }
+    };
 
     // State for data
     const [sucursales, setSucursales] = useState<Branch[]>([]);
@@ -215,9 +262,8 @@ export const PerformanceDashboard: React.FC = () => {
         datasets: [
             {
                 data: [aggregatedMetrics.entregasATiempo, aggregatedMetrics.entregasTardias],
-                backgroundColor: ['#059669', '#dc2626'],
-                borderColor: ['#047857', '#b91c1c'],
-                borderWidth: 2,
+                backgroundColor: ['#18181b', '#f59e0b'],
+                borderWidth: 0,
             },
         ],
     };
@@ -247,7 +293,8 @@ export const PerformanceDashboard: React.FC = () => {
                     aggregatedMetrics.tareasPendientes,
                     aggregatedMetrics.tareasEnProceso,
                 ],
-                backgroundColor: ['#059669', '#d97706', '#2563eb'],
+                backgroundColor: ['#18181b', '#f59e0b', '#881337'],
+                borderWidth: 0,
                 borderRadius: 8,
             },
         ],
@@ -289,10 +336,11 @@ export const PerformanceDashboard: React.FC = () => {
                 data: sortedMensajeros.map(m => m.porcentajeCumplimiento ?? 0),
                 backgroundColor: sortedMensajeros.map(m => {
                     const pct = m.porcentajeCumplimiento ?? 0;
-                    if (pct >= 85) return '#059669';
-                    if (pct >= 60) return '#d97706';
-                    return '#dc2626';
+                    if (pct >= 85) return '#18181b';
+                    if (pct >= 60) return '#f59e0b';
+                    return '#881337';
                 }),
+                borderWidth: 0,
                 borderRadius: 8,
             },
         ],
@@ -345,29 +393,86 @@ export const PerformanceDashboard: React.FC = () => {
     return (
         <div className="performance-dashboard animate-fade-in">
             <div className="dashboard-header">
-                <h1>Análisis de Rendimiento</h1>
-                <p className="text-secondary">Métricas de rendimiento de mensajeros</p>
+                <div className="header-title-row">
+                    <div>
+                        <h1>Análisis de Rendimiento</h1>
+                        <p className="text-secondary">Métricas de rendimiento de mensajeros</p>
+                    </div>
+                    <div className="period-indicator">
+                        <span className="period-label">Período:</span>
+                        <span className="period-dates">
+                            {fechaInicio === fechaFin ? (
+                                new Date(fechaInicio + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+                            ) : (
+                                <>
+                                    {new Date(fechaInicio + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    {' → '}
+                                    {new Date(fechaFin + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </>
+                            )}
+                        </span>
+                    </div>
+                </div>
             </div>
 
             {/* Filters */}
             <Card className="filters-card">
+                {/* Quick Date Filters */}
+                <div className="quick-filters">
+                    <button
+                        className={`quick-filter-btn ${dateFilter === 'today' ? 'active' : ''}`}
+                        onClick={() => handleDateFilterChange('today')}
+                    >
+                        Hoy
+                    </button>
+                    <button
+                        className={`quick-filter-btn ${dateFilter === 'last7days' ? 'active' : ''}`}
+                        onClick={() => handleDateFilterChange('last7days')}
+                    >
+                        Últimos 7 días
+                    </button>
+                    <button
+                        className={`quick-filter-btn ${dateFilter === 'last30days' ? 'active' : ''}`}
+                        onClick={() => handleDateFilterChange('last30days')}
+                    >
+                        Últimos 30 días
+                    </button>
+                    <button
+                        className={`quick-filter-btn ${dateFilter === 'thisMonth' ? 'active' : ''}`}
+                        onClick={() => handleDateFilterChange('thisMonth')}
+                    >
+                        Este mes
+                    </button>
+                    <button
+                        className={`quick-filter-btn ${dateFilter === 'custom' ? 'active' : ''}`}
+                        onClick={() => handleDateFilterChange('custom')}
+                    >
+                        Personalizado
+                    </button>
+                </div>
+
                 <div className="filters-container">
-                    <div className="filter-group">
-                        <label>Fecha Inicio</label>
-                        <Input
-                            type="date"
-                            value={fechaInicio}
-                            onChange={(e) => setFechaInicio(e.target.value)}
-                        />
-                    </div>
-                    <div className="filter-group">
-                        <label>Fecha Fin</label>
-                        <Input
-                            type="date"
-                            value={fechaFin}
-                            onChange={(e) => setFechaFin(e.target.value)}
-                        />
-                    </div>
+                    {/* Custom Date Inputs - Only show when custom is selected */}
+                    {dateFilter === 'custom' && (
+                        <>
+                            <div className="filter-group">
+                                <label>Fecha Inicio</label>
+                                <Input
+                                    type="date"
+                                    value={fechaInicio}
+                                    onChange={(e) => setFechaInicio(e.target.value)}
+                                />
+                            </div>
+                            <div className="filter-group">
+                                <label>Fecha Fin</label>
+                                <Input
+                                    type="date"
+                                    value={fechaFin}
+                                    onChange={(e) => setFechaFin(e.target.value)}
+                                />
+                            </div>
+                        </>
+                    )}
                     <div className="filter-group">
                         <label>Sucursal</label>
                         <select
@@ -575,101 +680,107 @@ export const PerformanceDashboard: React.FC = () => {
                 </Card>
             </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-2 charts-grid mt-lg">
+            {/* Main Dashboard Grid - Charts and Table in one view */}
+            <div className="dashboard-main-grid">
+                {/* Doughnut Chart */}
                 <Card>
-                    <CardHeader title="Entregas a Tiempo vs Tardías" subtitle="Distribución de entregas" />
+                    <CardHeader title="Entregas" subtitle="A Tiempo vs Tardías" />
                     <div className="chart-container doughnut-container">
                         {aggregatedMetrics.entregasATiempo > 0 || aggregatedMetrics.entregasTardias > 0 ? (
                             <Doughnut data={doughnutData} options={doughnutOptions} />
                         ) : (
                             <div className="no-data">
-                                <AlertCircle size={48} />
-                                <p>Sin datos disponibles</p>
+                                <AlertCircle size={32} />
+                                <p>Sin datos</p>
                             </div>
                         )}
                     </div>
                 </Card>
 
+                {/* Bar Chart - Task Status */}
                 <Card>
-                    <CardHeader title="Estado de Tareas" subtitle="Distribución por estado" />
+                    <CardHeader title="Estado de Tareas" subtitle="Por estado" />
                     <div className="chart-container">
                         <Bar data={statusBarData} options={statusBarOptions} />
                     </div>
                 </Card>
-            </div>
 
-            {/* Comparison Chart */}
-            {metricsData.length > 1 && (
-                <Card className="mt-lg">
-                    <CardHeader
-                        title="Comparativo de Rendimiento"
-                        subtitle="Ranking de mensajeros por % de cumplimiento"
-                    />
+                {/* Comparison Chart */}
+                <Card>
+                    <CardHeader title="Comparativo" subtitle="% Cumplimiento" />
                     <div className="chart-container comparison-container">
-                        <Bar data={comparisonBarData} options={comparisonBarOptions} />
+                        {metricsData.length > 0 ? (
+                            <Bar data={comparisonBarData} options={comparisonBarOptions} />
+                        ) : (
+                            <div className="no-data">
+                                <AlertCircle size={32} />
+                                <p>Sin datos</p>
+                            </div>
+                        )}
                     </div>
                 </Card>
-            )}
+            </div>
 
             {/* Ranking Table */}
-            <Card className="mt-lg">
-                <CardHeader
-                    title="Ranking de Mensajeros"
-                    subtitle="Ordenados por porcentaje de cumplimiento"
-                />
-                <div className="ranking-table-container">
-                    <table className="ranking-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Mensajero</th>
-                                <th>Tareas Completadas</th>
-                                <th>% Cumplimiento</th>
-                                <th>Tiempo Promedio</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sortedMensajeros.length > 0 ? (
-                                sortedMensajeros.map((m, index) => (
-                                    <tr key={m.idMensajero}>
-                                        <td className="rank-cell">{index + 1}</td>
-                                        <td className="name-cell">
-                                            <div className="mensajero-avatar">
-                                                <Users size={16} />
-                                            </div>
-                                            {m.nombreMensajero || 'Sin nombre'}
-                                        </td>
-                                        <td>{m.tareasCompletadas ?? 0} / {m.totalTareasAsignadas ?? 0}</td>
-                                        <td>
-                                            <div className={`performance-badge ${getPerformanceClass(m.porcentajeCumplimiento)}`}>
-                                                {(m.porcentajeCumplimiento ?? 0).toFixed(1)}%
-                                            </div>
-                                        </td>
-                                        <td>{formatTime(m.tiempoPromedioTotal)}</td>
-                                        <td>
-                                            <span className={`status-indicator ${getPerformanceClass(m.porcentajeCumplimiento)}`}>
-                                                {(m.porcentajeCumplimiento ?? 0) >= 85
-                                                    ? 'Excelente'
-                                                    : (m.porcentajeCumplimiento ?? 0) >= 60
-                                                        ? 'Regular'
-                                                        : 'Bajo'}
-                                            </span>
+            <div className="ranking-section">
+                <Card>
+                    <CardHeader
+                        title="Ranking de Mensajeros"
+                        subtitle="Por % cumplimiento"
+                    />
+                    <div className="ranking-table-container">
+                        <table className="ranking-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Mensajero</th>
+                                    <th>Completadas</th>
+                                    <th>% Cumpl.</th>
+                                    <th>Tiempo</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sortedMensajeros.length > 0 ? (
+                                    sortedMensajeros.map((m, index) => (
+                                        <tr key={m.idMensajero}>
+                                            <td className="rank-cell">{index + 1}</td>
+                                            <td className="name-cell">
+                                                <div className="mensajero-avatar">
+                                                    <Users size={12} />
+                                                </div>
+                                                {m.nombreMensajero || 'Sin nombre'}
+                                            </td>
+                                            <td>{m.tareasCompletadas ?? 0}/{m.totalTareasAsignadas ?? 0}</td>
+                                            <td>
+                                                <div className={`performance-badge ${getPerformanceClass(m.porcentajeCumplimiento)}`}>
+                                                    {(m.porcentajeCumplimiento ?? 0).toFixed(0)}%
+                                                </div>
+                                            </td>
+                                            <td>{formatTime(m.tiempoPromedioTotal)}</td>
+                                            <td>
+                                                <span className={`status-indicator ${getPerformanceClass(m.porcentajeCumplimiento)}`}>
+                                                    {(m.porcentajeCumplimiento ?? 0) >= 85
+                                                        ? 'Excelente'
+                                                        : (m.porcentajeCumplimiento ?? 0) >= 60
+                                                            ? 'Regular'
+                                                            : 'Bajo'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={6} className="no-data-cell">
+                                            {loading ? 'Cargando...' : 'Sin datos'}
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={6} className="no-data-cell">
-                                        {loading ? 'Cargando datos...' : 'No hay datos disponibles'}
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+            </div>
         </div>
     );
 };
