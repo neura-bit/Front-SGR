@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { User, Lock, ShieldCheck, MapPin, BarChart3 } from 'lucide-react';
+import { User, Lock, ShieldCheck, MapPin, BarChart3, Eye, EyeOff } from 'lucide-react';
 import ubikaPantherLogo from '../assets/ubika-panther.png';
 import './Login.css';
 
 export const Login: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const { login, isLoading, error } = useAuth();
     const navigate = useNavigate();
@@ -26,10 +27,22 @@ export const Login: React.FC = () => {
 
     return (
         <div className="login-page">
-            {/* Split Background */}
+            {/* Split Background with Speed Lines */}
             <div className="login-background">
-                <div className="bg-left"></div>
-                <div className="bg-right"></div>
+                <div className="bg-left">
+                    <div className="speed-line speed-line-1"></div>
+                    <div className="speed-line speed-line-2"></div>
+                    <div className="speed-line speed-line-3"></div>
+                    <div className="speed-line speed-line-4"></div>
+                    <div className="speed-line speed-line-5"></div>
+                </div>
+                <div className="bg-right">
+                    <div className="accent-line accent-line-1"></div>
+                    <div className="accent-line accent-line-2"></div>
+                    <div className="accent-line accent-line-3"></div>
+                    <div className="accent-line accent-line-4"></div>
+                    <div className="accent-line accent-line-5"></div>
+                </div>
             </div>
 
             {/* Floating Card */}
@@ -83,15 +96,25 @@ export const Login: React.FC = () => {
                                 required
                             />
 
-                            <Input
-                                type="password"
-                                label="Contraseña"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                icon={<Lock size={20} />}
-                                required
-                            />
+                            <div className="password-input-wrapper">
+                                <Input
+                                    type={showPassword ? 'text' : 'password'}
+                                    label="Contraseña"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    icon={<Lock size={20} />}
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    className="password-toggle"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
 
                             {error && <div className="error-message">{error}</div>}
 
