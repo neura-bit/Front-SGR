@@ -17,6 +17,18 @@
   --color-highlight: #dc2626;
   /* Red 600 (Rojo sutil para alertas/detalles) */
 
+  /* Brand Colors - UBIKA (Amber/Orange) */
+  --color-brand-amber: #F59E0B;
+  /* Amber 500 - Primary brand color */
+  --color-brand-amber-dark: #D97706;
+  /* Amber 600 - Darker shade */
+  --color-brand-orange: #FF8C00;
+  /* Dark Orange - Accent */
+  --color-brand-amber-light: #FBBF24;
+  /* Amber 400 - Highlights */
+  --color-brand-amber-glow: rgba(245, 158, 11, 0.3);
+  /* Glow effect */
+
   /* Neutral Colors */
   --color-bg: #ffffff;
   --color-bg-secondary: #f8fafc;
@@ -58,6 +70,10 @@
   --gradient-secondary: linear-gradient(135deg, #881337 0%, #be123c 100%);
   /* Vino gradient */
   --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  --gradient-brand: linear-gradient(135deg, #F59E0B 0%, #FF8C00 50%, #D97706 100%);
+  /* UBIKA amber/orange gradient */
+  --gradient-brand-hover: linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #FF8C00 100%);
+  /* Lighter on hover */
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
