@@ -568,7 +568,303 @@
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Attachments Styles */
+.attachments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: #f9fafb;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.attachment-item:hover {
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.attachment-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.attachment-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.attachment-name {
+    font-weight: 500;
+    color: var(--color-text-primary, #111827);
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.attachment-type {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary, #6b7280);
+    text-transform: uppercase;
+}
+
+.attachment-download {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    background-color: #dbeafe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.attachment-download:hover {
+    background-color: #bfdbfe;
+    color: #1d4ed8;
+    transform: scale(1.1);
+}
+
+/* File Upload Area */
+.file-upload-area {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.file-upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    border: 2px dashed var(--color-border, #d1d5db);
+    background-color: #f9fafb;
+    color: var(--color-text-secondary, #6b7280);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    justify-content: center;
+}
+
+.file-upload-btn:hover {
+    border-color: #6366f1;
+    background-color: #f0f0ff;
+    color: #6366f1;
+}
+
+.file-upload-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary, #9ca3af);
+    text-align: center;
+}
+
+/* Attachment Preview */
+.attachment-preview {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.attachment-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Attachment Remove Button */
+.attachment-remove {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    border: none;
+    background-color: #fee2e2;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.attachment-remove:hover {
+    background-color: #fecaca;
+    color: #b91c1c;
+    transform: scale(1.1);
+}
+
+/* Pending file item styling */
+.attachment-item.pending {
+    background-color: #fffbeb;
+    border-color: #fcd34d;
+}
+
+.attachment-icon.file-icon {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+/* Attachments sections */
+.attachments-section,
+.pending-files-section {
+    margin-bottom: 1rem;
+}
+
+.hidden {
+    display: none;
+}
+
+/* File Preview Expanded */
+.file-preview-expanded {
+    margin-bottom: 1rem;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background-color: #fafafa;
+}
+
+.file-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background-color: #f3f4f6;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.file-preview-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-primary, #1f2937);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-preview-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: none;
+    background-color: transparent;
+    color: var(--color-text-secondary, #6b7280);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.file-preview-close:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.file-preview-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    max-height: 350px;
+    padding: 1rem;
+    overflow: auto;
+}
+
+.file-preview-image {
+    max-width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.file-preview-pdf {
+    width: 100%;
+    height: 320px;
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.file-preview-unsupported {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--color-text-secondary, #9ca3af);
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Clickable attachment items */
+.attachment-item.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.attachment-item.clickable:hover {
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+    transform: translateY(-1px);
+}
+
+/* Attachment actions container */
+.attachment-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* Delete button */
+.attachment-delete {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    border: none;
+    background-color: #fee2e2;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.attachment-delete:hover {
+    background-color: #fecaca;
+    color: #b91c1c;
+    transform: scale(1.1);
 }

@@ -24,6 +24,7 @@ interface ApiTask {
 const mapToTask = (data: any): Task => {
     const id = String(data.idTarea || data.id || '');
 
+    // Support both nested response (from regular API) and flat response (from date range API)
     const task: Task = {
         id,
         nombre: data.nombre || '',
@@ -33,15 +34,22 @@ const mapToTask = (data: any): Task => {
         comentario: data.comentario,
         observacion: data.observacion,
         proceso: data.proceso ?? false,
-        fechaInicio: data.fechaInicio || '',
+        fechaInicio: data.fechaInicio || data.fechaCreacion || '',
         codigo: data.codigo || '',
-        taskTypeId: String(data.tipoOperacion?.idTipoOperacion || ''),
-        categoryId: String(data.categoria?.idCategoria || ''),
-        clientId: String(data.cliente?.idCliente || ''),
-        taskStatusId: String(data.estadoTarea?.idEstadoTarea || ''),
-        createdById: String(data.asesorCrea?.idUsuario || ''),
-        assignedCourierId: data.mensajeroAsignado?.idUsuario ? String(data.mensajeroAsignado.idUsuario) : null,
-        supervisorId: data.supervisorAsigna?.idUsuario ? String(data.supervisorAsigna.idUsuario) : null,
+        // Support both nested and flat response formats
+        taskTypeId: String(data.tipoOperacion?.idTipoOperacion || data.idTipoOperacion || ''),
+        categoryId: String(data.categoria?.idCategoria || data.idCategoria || ''),
+        clientId: String(data.cliente?.idCliente || data.idCliente || ''),
+        taskStatusId: String(data.estadoTarea?.idEstadoTarea || data.idEstadoTarea || ''),
+        createdById: String(data.asesorCrea?.idUsuario || data.idAsesorCrea || ''),
+        assignedCourierId: data.mensajeroAsignado?.idUsuario
+            ? String(data.mensajeroAsignado.idUsuario)
+            : (data.idMensajeroAsignado ? String(data.idMensajeroAsignado) : null),
+        supervisorId: data.supervisorAsigna?.idUsuario
+            ? String(data.supervisorAsigna.idUsuario)
+            : (data.idSupervisorAsigna ? String(data.idSupervisorAsigna) : null),
+        // Attachments
+        archivosAdjuntos: Array.isArray(data.archivosAdjuntos) ? data.archivosAdjuntos : [],
     };
 
     return task;
@@ -126,5 +134,53 @@ export const taskService = {
         });
         const data = Array.isArray(response.data) ? response.data : (response.data.data || response.data.tareas || []);
         return data.map(mapToTask);
+    },
+
+    uploadFile: async (taskId: string, file: File): Promise<any> => {
+        const formData = new FormData();
+        formData.append('archivo', file);
+        const response = await api.post(`/tareas/${taskId}/archivos`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    uploadFiles: async (taskId: string, files: File[]): Promise<any[]> => {
+        const results = [];
+        for (const file of files) {
+            const result = await taskService.uploadFile(taskId, file);
+            results.push(result);
+        }
+        return results;
+    },
+
+    deleteFile: async (fileId: number): Promise<void> => {
+        await api.delete(`/archivos/${fileId}`);
+    },
+
+    getFileBlob: async (fileId: number): Promise<Blob> => {
+        const response = await api.get(`/archivos/${fileId}`, {
+            responseType: 'blob',
+        });
+        return response.data;
+    },
+
+    getFileBlobUrl: async (fileId: number): Promise<string> => {
+        const blob = await taskService.getFileBlob(fileId);
+        return URL.createObjectURL(blob);
+    },
+
+    downloadFile: async (fileId: number, fileName: string): Promise<void> => {
+        const blob = await taskService.getFileBlob(fileId);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     },
 };

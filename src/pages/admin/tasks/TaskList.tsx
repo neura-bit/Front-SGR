@@ -129,8 +129,20 @@ export const TaskList: React.FC = () => {
         return counts;
     }, [dateFilteredTasks]);
 
-    const handleOpenModal = (task?: Task) => {
-        setSelectedTask(task);
+    const handleOpenModal = async (task?: Task) => {
+        if (task) {
+            // Fetch full task details including attachments
+            try {
+                const fullTask = await taskService.getById(task.id);
+                setSelectedTask(fullTask);
+            } catch (error) {
+                console.error('Error fetching task details:', error);
+                // Fallback to the task from list if fetch fails
+                setSelectedTask(task);
+            }
+        } else {
+            setSelectedTask(undefined);
+        }
         setIsModalOpen(true);
     };
 

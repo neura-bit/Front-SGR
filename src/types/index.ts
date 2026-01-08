@@ -75,6 +75,16 @@ export interface Location {
     lng: number;
 }
 
+export interface ArchivoAdjunto {
+    idArchivo: number;
+    nombreOriginal: string;
+    tipoMime: string;
+    tamanioBytes?: number;
+    fechaSubida?: string;
+    // Computed field for download URL
+    urlArchivo?: string;
+}
+
 export interface Task {
     id: string;
     nombre: string;
@@ -94,6 +104,8 @@ export interface Task {
     createdById: string; // asesorCrea ID
     assignedCourierId?: string | null; // mensajeroAsignado ID
     supervisorId?: string | null; // supervisorAsigna ID
+    // Attachments
+    archivosAdjuntos?: ArchivoAdjunto[];
 }
 
 export interface CourierLocation {

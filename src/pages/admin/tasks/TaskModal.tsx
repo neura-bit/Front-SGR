@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../../../contexts/DataContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { Task } from '../../../types/index';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { X, ClipboardList } from 'lucide-react';
+import { X, ClipboardList, Paperclip, FileText, Download, Upload, Trash2, Image, File } from 'lucide-react';
+import { taskService } from '../../../services/taskService';
 import './Tasks.css';
 
 interface TaskModalProps {
@@ -17,7 +18,7 @@ interface TaskModalProps {
 
 export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onSuccess, onError }) => {
     const { user } = useAuth();
-    const { addTask, updateTask, clients, taskTypes, categories, taskStatuses, users, refreshClients, refreshTaskTypes, refreshCategories, refreshTaskStatuses, refreshUsers } = useData();
+    const { updateTask, clients, taskTypes, categories, taskStatuses, users, refreshClients, refreshTaskTypes, refreshCategories, refreshTaskStatuses, refreshUsers } = useData();
 
     // Check if logged-in user is an ASESOR
     const isAsesor = user?.role === 'ASESOR';
@@ -40,6 +41,26 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
     });
 
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+    // File upload state
+    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+    const [filePreviews, setFilePreviews] = useState<{ file: File; preview: string }[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Blob URLs for existing files (loaded with auth)
+    const [fileBlobUrls, setFileBlobUrls] = useState<Record<number, string>>({});
+
+    // Selected file for expanded preview
+    const [selectedPreview, setSelectedPreview] = useState<{
+        id: number;
+        url: string;
+        name: string;
+        type: string;
+    } | null>(null);
+
+    // Local state for attachments (to update UI immediately on delete)
+    const [localAttachments, setLocalAttachments] = useState(task?.archivosAdjuntos || []);
 
     useEffect(() => {
         // Load all related data
@@ -92,7 +113,45 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
             });
         }
         setErrors({});
+        // Clear pending files when modal opens/closes
+        setPendingFiles([]);
+        setFilePreviews([]);
+        setFileBlobUrls({});
+        setSelectedPreview(null);
+        // Sync local attachments with task
+        setLocalAttachments(task?.archivosAdjuntos || []);
     }, [task, isOpen, taskStatuses, isAsesor, user?.id]);
+
+    // Load blob URLs for existing image files
+    useEffect(() => {
+        if (!task?.archivosAdjuntos || task.archivosAdjuntos.length === 0) return;
+
+        const loadFileBlobUrls = async () => {
+            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+            const imageFiles = task.archivosAdjuntos!.filter(archivo =>
+                archivo.tipoMime?.startsWith('image/') ||
+                imageExtensions.some(ext => archivo.nombreOriginal?.toLowerCase().endsWith(`.${ext}`))
+            );
+
+            const urls: Record<number, string> = {};
+            for (const archivo of imageFiles) {
+                try {
+                    const blobUrl = await taskService.getFileBlobUrl(archivo.idArchivo);
+                    urls[archivo.idArchivo] = blobUrl;
+                } catch (error) {
+                    console.error(`Error loading preview for file ${archivo.idArchivo}:`, error);
+                }
+            }
+            setFileBlobUrls(urls);
+        };
+
+        loadFileBlobUrls();
+
+        // Cleanup blob URLs on unmount
+        return () => {
+            Object.values(fileBlobUrls).forEach(url => URL.revokeObjectURL(url));
+        };
+    }, [task?.archivosAdjuntos]);
 
     const validate = (): boolean => {
         const newErrors: { [key: string]: string } = {};
@@ -131,6 +190,50 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
 
     if (!isOpen) return null;
 
+    // File handling functions
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+
+        const newFiles = Array.from(files);
+        const newPreviews = newFiles.map(file => {
+            const preview = file.type.startsWith('image/')
+                ? URL.createObjectURL(file)
+                : '';
+            return { file, preview };
+        });
+
+        setPendingFiles(prev => [...prev, ...newFiles]);
+        setFilePreviews(prev => [...prev, ...newPreviews]);
+
+        // Reset input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const removePendingFile = (index: number) => {
+        // Revoke preview URL if it's an image
+        if (filePreviews[index]?.preview) {
+            URL.revokeObjectURL(filePreviews[index].preview);
+        }
+        setPendingFiles(prev => prev.filter((_, i) => i !== index));
+        setFilePreviews(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const isImageFile = (file: File) => file.type.startsWith('image/');
+
+    const getFileIcon = (file: File) => {
+        if (file.type.startsWith('image/')) return <Image size={20} />;
+        return <File size={20} />;
+    };
+
+    const formatFileSize = (bytes: number) => {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -139,6 +242,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
         }
 
         try {
+            setIsUploading(true);
             const taskData = {
                 nombre: formData.nombre,
                 codigo: formData.codigo,
@@ -158,20 +262,42 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
                 supervisorId: formData.supervisorId || null,
             };
 
+            let taskId: string;
+
             if (task) {
                 if (!task.id) {
                     throw new Error('No se puede actualizar una tarea sin ID válido');
                 }
                 await updateTask(task.id, taskData);
-                if (onSuccess) onSuccess('Tarea actualizada correctamente');
+                taskId = task.id;
             } else {
-                await addTask(taskData);
-                if (onSuccess) onSuccess('Tarea creada correctamente');
+                // Use taskService.create directly to get the created task ID
+                const newTask = await taskService.create(taskData);
+                taskId = newTask.id;
             }
+
+            // Upload pending files if any
+            if (pendingFiles.length > 0 && taskId) {
+                try {
+                    await taskService.uploadFiles(taskId, pendingFiles);
+                } catch (uploadError) {
+                    console.error('Error uploading files:', uploadError);
+                    if (onError) onError('Tarea guardada pero hubo un error al subir algunos archivos.');
+                }
+            }
+
+            // Clean up preview URLs
+            filePreviews.forEach(fp => {
+                if (fp.preview) URL.revokeObjectURL(fp.preview);
+            });
+
+            if (onSuccess) onSuccess(task ? 'Tarea actualizada correctamente' : 'Tarea creada correctamente');
             onClose();
         } catch (error: any) {
             console.error('Error saving task:', error);
             if (onError) onError(error.message || 'Error al guardar la tarea. Por favor intente nuevamente.');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -414,6 +540,251 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
                             </div>
                         </div>
 
+                        {/* Archivos Adjuntos */}
+                        <div className="form-section">
+                            <h3 className="form-section-title">
+                                <Paperclip size={16} className="inline mr-2" />
+                                Archivos Adjuntos
+                            </h3>
+
+                            {/* Archivos existentes (solo en edición) */}
+                            {localAttachments.length > 0 && (
+                                <div className="attachments-section">
+                                    <p className="text-sm text-gray-500 mb-2">Archivos guardados:</p>
+
+                                    {/* Preview expandido */}
+                                    {selectedPreview && (
+                                        <div className="file-preview-expanded">
+                                            <div className="file-preview-header">
+                                                <span className="file-preview-name">{selectedPreview.name}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedPreview(null)}
+                                                    className="file-preview-close"
+                                                >
+                                                    <X size={18} />
+                                                </button>
+                                            </div>
+                                            <div className="file-preview-content">
+                                                {selectedPreview.type.startsWith('image/') ? (
+                                                    <img
+                                                        src={selectedPreview.url}
+                                                        alt={selectedPreview.name}
+                                                        className="file-preview-image"
+                                                    />
+                                                ) : selectedPreview.type === 'application/pdf' ? (
+                                                    <iframe
+                                                        src={selectedPreview.url}
+                                                        title={selectedPreview.name}
+                                                        className="file-preview-pdf"
+                                                    />
+                                                ) : (
+                                                    <div className="file-preview-unsupported">
+                                                        <FileText size={48} />
+                                                        <p>Vista previa no disponible</p>
+                                                        <p className="text-sm text-gray-400">Haz clic en descargar para ver el archivo</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="attachments-list">
+                                        {localAttachments.map((archivo) => {
+                                            // Check if file is an image by MIME type or by filename extension
+                                            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+                                            const isImage = archivo.tipoMime?.startsWith('image/') ||
+                                                imageExtensions.some(ext => archivo.nombreOriginal?.toLowerCase().endsWith(`.${ext}`));
+                                            const isPdf = archivo.tipoMime === 'application/pdf';
+                                            const canPreview = isImage || isPdf;
+
+                                            // Get blob URL if available (loaded with auth)
+                                            const blobUrl = fileBlobUrls[archivo.idArchivo];
+
+                                            // Format file size
+                                            const formatSize = (bytes?: number) => {
+                                                if (!bytes) return '';
+                                                if (bytes < 1024) return bytes + ' B';
+                                                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                                                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                                            };
+
+                                            // Handle view preview
+                                            const handleViewPreview = async () => {
+                                                try {
+                                                    // Use existing blob URL or fetch new one
+                                                    let url = blobUrl;
+                                                    if (!url) {
+                                                        url = await taskService.getFileBlobUrl(archivo.idArchivo);
+                                                        setFileBlobUrls(prev => ({ ...prev, [archivo.idArchivo]: url }));
+                                                    }
+                                                    setSelectedPreview({
+                                                        id: archivo.idArchivo,
+                                                        url,
+                                                        name: archivo.nombreOriginal,
+                                                        type: archivo.tipoMime || ''
+                                                    });
+                                                } catch (error) {
+                                                    console.error('Error loading preview:', error);
+                                                    if (onError) onError('Error al cargar vista previa');
+                                                }
+                                            };
+
+                                            // Handle download with auth
+                                            const handleDownload = async (e: React.MouseEvent) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                try {
+                                                    await taskService.downloadFile(archivo.idArchivo, archivo.nombreOriginal);
+                                                } catch (error) {
+                                                    console.error('Error downloading file:', error);
+                                                    if (onError) onError('Error al descargar el archivo');
+                                                }
+                                            };
+
+                                            // Handle delete file
+                                            const handleDelete = async (e: React.MouseEvent) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+
+                                                if (!confirm(`¿Estás seguro de eliminar "${archivo.nombreOriginal}"?`)) {
+                                                    return;
+                                                }
+
+                                                try {
+                                                    await taskService.deleteFile(archivo.idArchivo);
+
+                                                    // Remove from local state immediately
+                                                    setLocalAttachments(prev =>
+                                                        prev.filter(a => a.idArchivo !== archivo.idArchivo)
+                                                    );
+
+                                                    // Remove from blob URLs if exists
+                                                    if (fileBlobUrls[archivo.idArchivo]) {
+                                                        URL.revokeObjectURL(fileBlobUrls[archivo.idArchivo]);
+                                                        setFileBlobUrls(prev => {
+                                                            const newUrls = { ...prev };
+                                                            delete newUrls[archivo.idArchivo];
+                                                            return newUrls;
+                                                        });
+                                                    }
+                                                    // Close preview if this file was being previewed
+                                                    if (selectedPreview?.id === archivo.idArchivo) {
+                                                        setSelectedPreview(null);
+                                                    }
+                                                    // Notify success
+                                                    if (onSuccess) onSuccess('Archivo eliminado correctamente');
+                                                } catch (error) {
+                                                    console.error('Error deleting file:', error);
+                                                    if (onError) onError('Error al eliminar el archivo');
+                                                }
+                                            };
+
+                                            return (
+                                                <div
+                                                    key={archivo.idArchivo}
+                                                    className={`attachment-item ${canPreview ? 'clickable' : ''}`}
+                                                    onClick={canPreview ? handleViewPreview : undefined}
+                                                    title={canPreview ? 'Clic para ver' : ''}
+                                                >
+                                                    {isImage && blobUrl ? (
+                                                        <div className="attachment-preview">
+                                                            <img src={blobUrl} alt={archivo.nombreOriginal} />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="attachment-icon">
+                                                            <FileText size={20} />
+                                                        </div>
+                                                    )}
+                                                    <div className="attachment-info">
+                                                        <span className="attachment-name">{archivo.nombreOriginal}</span>
+                                                        <span className="attachment-type">
+                                                            {archivo.tipoMime} {formatSize(archivo.tamanioBytes)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="attachment-actions">
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleDownload}
+                                                            className="attachment-download"
+                                                            title="Descargar"
+                                                        >
+                                                            <Download size={16} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleDelete}
+                                                            className="attachment-delete"
+                                                            title="Eliminar"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Archivos pendientes de subir */}
+                            {pendingFiles.length > 0 && (
+                                <div className="pending-files-section">
+                                    <p className="text-sm text-gray-500 mb-2">Archivos por subir:</p>
+                                    <div className="attachments-list">
+                                        {filePreviews.map((fp, index) => (
+                                            <div key={index} className="attachment-item pending">
+                                                {isImageFile(fp.file) && fp.preview ? (
+                                                    <div className="attachment-preview">
+                                                        <img src={fp.preview} alt={fp.file.name} />
+                                                    </div>
+                                                ) : (
+                                                    <div className="attachment-icon file-icon">
+                                                        {getFileIcon(fp.file)}
+                                                    </div>
+                                                )}
+                                                <div className="attachment-info">
+                                                    <span className="attachment-name">{fp.file.name}</span>
+                                                    <span className="attachment-type">{formatFileSize(fp.file.size)}</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removePendingFile(index)}
+                                                    className="attachment-remove"
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Botón para agregar archivos */}
+                            <div className="file-upload-area">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileSelect}
+                                    multiple
+                                    className="hidden"
+                                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="file-upload-btn"
+                                >
+                                    <Upload size={18} />
+                                    <span>Agregar Archivos</span>
+                                </button>
+                                <p className="file-upload-hint">
+                                    Imágenes, PDF, Word, Excel (máx. 10MB por archivo)
+                                </p>
+                            </div>
+                        </div>
+
                         {/* Estado de Proceso */}
                         <div className="input-wrapper">
                             <label className="checkbox-label">
@@ -440,8 +811,12 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
                         <Button
                             type="submit"
                             className="flex-1 bg-gray-900 hover:bg-gray-800 text-white shadow-lg shadow-gray-500/20 rounded-xl"
+                            isLoading={isUploading}
+                            disabled={isUploading}
                         >
-                            {task ? 'Guardar Cambios' : 'Crear Tarea'}
+                            {isUploading
+                                ? 'Guardando...'
+                                : (task ? 'Guardar Cambios' : 'Crear Tarea')}
                         </Button>
                     </div>
                 </form>
