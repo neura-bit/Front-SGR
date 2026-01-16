@@ -4,8 +4,7 @@ import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import { RefreshCw } from "lucide-react"
 import "./GoogleTrackingMap.css"
-
-const GOOGLE_MAPS_API_KEY = "AIzaSyDCINY7fSZwHI0OzGu6Lq8j1OYvjQkTsDI" // Declare the variable here
+import { loadGoogleMapsScript } from "./googleMapsLoader"
 
 export interface CourierMarker {
     id: string
@@ -22,83 +21,6 @@ interface GoogleTrackingMapProps {
     height?: string
     selectedCourierId?: string | null
     onCourierClick?: (courier: CourierMarker) => void
-}
-
-// Load Google Maps script - shared promise to avoid loading conflicts
-let googleMapsPromise: Promise<void> | null = null
-
-const loadGoogleMapsScript = (): Promise<void> => {
-    // If maps is already loaded, resolve immediately
-    if (typeof window !== "undefined" && window.google?.maps) {
-        return Promise.resolve()
-    }
-
-    // If loading is already in progress, return the existing promise
-    if (googleMapsPromise) return googleMapsPromise
-
-    googleMapsPromise = new Promise((resolve, reject) => {
-        // Double check inside promise
-        if (typeof window !== "undefined" && window.google?.maps) {
-            resolve()
-            return
-        }
-
-        if (typeof document === "undefined") {
-            reject(new Error("Document is not available"))
-            return
-        }
-
-        // Check if another script is already inserted but not yet loaded
-        const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]')
-
-        if (existingScript) {
-            // Wait for the existing script to load
-            let attempts = 0
-            const maxAttempts = 50 // 5 seconds
-            const checkLoaded = setInterval(() => {
-                attempts++
-                if (typeof window !== "undefined" && window.google?.maps) {
-                    clearInterval(checkLoaded)
-                    resolve()
-                } else if (attempts >= maxAttempts) {
-                    clearInterval(checkLoaded)
-                    // Don't reject yet, maybe it's just slow, but stop checking interval
-                    // If it eventually loads, next call will catch it. 
-                    // But for this promise, we timeout to avoid hanging forever.
-                    reject(new Error("Timeout waiting for Google Maps to load"))
-                    googleMapsPromise = null // Reset so we can try again
-                }
-            }, 100)
-            return
-        }
-
-        // Create and insert script
-        const script = document.createElement("script")
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,marker&loading=async`
-        script.async = true
-        script.defer = true
-
-        script.onload = () => {
-            // Wait a tick to ensure window.google is populated
-            setTimeout(() => {
-                if (typeof window !== "undefined" && window.google?.maps) {
-                    resolve()
-                } else {
-                    reject(new Error("Script loaded but google.maps not found"))
-                    googleMapsPromise = null
-                }
-            }, 100)
-        }
-
-        script.onerror = () => {
-            reject(new Error("Failed to load Google Maps script"))
-            googleMapsPromise = null // Reset so we can try again
-        }
-
-        document.head.appendChild(script)
-    })
-
-    return googleMapsPromise
 }
 
 export const GoogleTrackingMap: React.FC<GoogleTrackingMapProps> = ({

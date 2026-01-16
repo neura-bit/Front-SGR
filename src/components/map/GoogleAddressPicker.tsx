@@ -1,9 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { MapPin, Link2, Navigation, AlertCircle, Info } from 'lucide-react';
 import './GoogleAddressPicker.css';
-
-// Google Maps API Key
-const GOOGLE_MAPS_API_KEY = 'AIzaSyDCINY7fSZwHI0OzGu6Lq8j1OYvjQkTsDI';
+import { loadGoogleMapsScript } from './googleMapsLoader';
 
 export interface LocationData {
     address?: string;
@@ -93,45 +91,6 @@ const expandShortUrl = async (shortUrl: string): Promise<string | null> => {
         // CORS will likely block this, so we need a fallback
         return null;
     }
-};
-
-// Load Google Maps script - shared promise to avoid loading conflicts
-let googleMapsPromise: Promise<void> | null = null;
-
-const loadGoogleMapsScript = (): Promise<void> => {
-    if (googleMapsPromise) return googleMapsPromise;
-
-    if (window.google?.maps) {
-        return Promise.resolve();
-    }
-
-    // Check if another script is already loading Google Maps
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
-    if (existingScript) {
-        // Wait for the existing script to load
-        googleMapsPromise = new Promise((resolve) => {
-            const checkLoaded = setInterval(() => {
-                if (window.google?.maps) {
-                    clearInterval(checkLoaded);
-                    resolve();
-                }
-            }, 100);
-        });
-        return googleMapsPromise;
-    }
-
-    googleMapsPromise = new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        // Load with both places and marker libraries, and use loading=async
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,marker&loading=async`;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load Google Maps'));
-        document.head.appendChild(script);
-    });
-
-    return googleMapsPromise;
 };
 
 export const GoogleAddressPicker: React.FC<GoogleAddressPickerProps> = ({
