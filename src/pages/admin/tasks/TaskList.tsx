@@ -68,7 +68,7 @@ const getDateRange = (filterType: DateFilterType, customStart?: string, customEn
 };
 
 export const TaskList: React.FC = () => {
-    const { deleteTask, clients, taskTypes, categories, taskStatuses, users } = useData();
+    const { deleteTask, clients, taskTypes, categories, taskStatuses, users, refreshClients, refreshTaskTypes, refreshCategories, refreshTaskStatuses, refreshUsers } = useData();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
@@ -85,6 +85,7 @@ export const TaskList: React.FC = () => {
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
     const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+    const [selectedStatusFilter, setSelectedStatusFilter] = useState<string | null>(null);
 
     const loadFilteredTasks = async () => {
         setIsLoadingTasks(true);
@@ -100,6 +101,15 @@ export const TaskList: React.FC = () => {
         }
     };
 
+    // Load related data on mount
+    useEffect(() => {
+        refreshClients();
+        refreshTaskTypes();
+        refreshCategories();
+        refreshTaskStatuses();
+        refreshUsers();
+    }, []);
+
     useEffect(() => {
         loadFilteredTasks();
     }, [dateFilter]);
@@ -111,13 +121,19 @@ export const TaskList: React.FC = () => {
     }, [customStartDate, customEndDate]);
 
     useEffect(() => {
-        const filtered = dateFilteredTasks.filter(
+        let filtered = dateFilteredTasks.filter(
             (task) =>
                 task.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 task.codigo?.toLowerCase().includes(searchTerm.toLowerCase())
         );
+
+        // Apply status filter if selected
+        if (selectedStatusFilter) {
+            filtered = filtered.filter(task => task.taskStatusId === selectedStatusFilter);
+        }
+
         setFilteredTasks(filtered);
-    }, [dateFilteredTasks, searchTerm]);
+    }, [dateFilteredTasks, searchTerm, selectedStatusFilter]);
 
     // Calculate status counts
     const statusCounts = useMemo(() => {
@@ -128,6 +144,10 @@ export const TaskList: React.FC = () => {
         });
         return counts;
     }, [dateFilteredTasks]);
+
+    const handleStatusCardClick = (statusId: string | null) => {
+        setSelectedStatusFilter(statusId === selectedStatusFilter ? null : statusId);
+    };
 
     const handleOpenModal = async (task?: Task) => {
         if (task) {
@@ -215,6 +235,14 @@ export const TaskList: React.FC = () => {
     const getTaskStatusName = (taskStatusId: string) => {
         const taskStatus = taskStatuses.find(ts => ts.id === taskStatusId);
         return taskStatus?.name || 'N/A';
+    };
+
+    // Check if task is locked (completed or in process - cannot be edited, deleted or resend code)
+    const isTaskLocked = (taskStatusId: string) => {
+        const taskStatus = taskStatuses.find(ts => ts.id === taskStatusId);
+        if (!taskStatus) return false;
+        const statusName = taskStatus.name.toUpperCase();
+        return statusName === 'COMPLETADA' || statusName === 'EN PROCESO' || statusName === 'EN_PROCESO';
     };
 
     const getUserName = (userId: string) => {
@@ -323,7 +351,10 @@ export const TaskList: React.FC = () => {
 
             {/* Status Stats Grid */}
             <div className="status-stats-grid">
-                <div className="status-stat-card total">
+                <div
+                    className={`status-stat-card total ${selectedStatusFilter === null ? '' : 'clickable'}`}
+                    onClick={() => handleStatusCardClick(null)}
+                >
                     <div className="status-stat-content">
                         <span className="status-stat-label">Total</span>
                         <span className="status-stat-value">{dateFilteredTasks.length}</span>
@@ -334,8 +365,13 @@ export const TaskList: React.FC = () => {
                 </div>
                 {taskStatuses.map((status) => {
                     const count = statusCounts[status.id] || 0;
+                    const isSelected = selectedStatusFilter === status.id;
                     return (
-                        <div key={status.id} className="status-stat-card">
+                        <div
+                            key={status.id}
+                            className={`status-stat-card clickable ${isSelected ? 'selected' : ''}`}
+                            onClick={() => handleStatusCardClick(status.id)}
+                        >
                             <div className="status-stat-content">
                                 <span className="status-stat-label">{status.name}</span>
                                 <span className="status-stat-value">{count}</span>
@@ -401,10 +437,7 @@ export const TaskList: React.FC = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                                            <Calendar size={14} />
-                                            <span className="text-sm">{formatDate(task.fechaLimite)}</span>
-                                        </div>
+                                        <span className="text-sm text-gray-600 dark:text-gray-300">{formatDate(task.fechaLimite)}</span>
                                     </td>
                                     <td>
                                         {task.assignedCourierId ? (
@@ -418,7 +451,7 @@ export const TaskList: React.FC = () => {
                                     </td>
                                     <td>
                                         <div className="action-buttons">
-                                            {isDeliveryTask(task.taskTypeId) && (
+                                            {isDeliveryTask(task.taskTypeId) && !isTaskLocked(task.taskStatusId) && (
                                                 <button
                                                     onClick={(e) => handleResendCode(task.id, e)}
                                                     className="action-btn resend"
@@ -427,20 +460,26 @@ export const TaskList: React.FC = () => {
                                                     <Send size={16} />
                                                 </button>
                                             )}
-                                            <button
-                                                onClick={() => handleOpenModal(task)}
-                                                className="action-btn edit"
-                                                title="Editar"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={(e) => handleDeleteClick(task.id, e)}
-                                                className="action-btn delete"
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            {!isTaskLocked(task.taskStatusId) ? (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleOpenModal(task)}
+                                                        className="action-btn edit"
+                                                        title="Editar"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => handleDeleteClick(task.id, e)}
+                                                        className="action-btn delete"
+                                                        title="Eliminar"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span className="text-xs text-gray-400" title="No se puede modificar una tarea completada o en proceso">Bloqueada</span>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
