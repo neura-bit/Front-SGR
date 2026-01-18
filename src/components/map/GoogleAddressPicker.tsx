@@ -285,10 +285,10 @@ export const GoogleAddressPicker: React.FC<GoogleAddressPickerProps> = ({
                     }
                 });
 
-                // Setup autocomplete for address input - use 'geocode' to support intersections
+                // Setup autocomplete for address input - no type restriction to allow businesses and addresses
                 if (addressInputRef.current) {
                     const autocomplete = new google.maps.places.Autocomplete(addressInputRef.current, {
-                        types: ['geocode'], // 'geocode' supports addresses, intersections, and precise locations
+                        // No 'types' restriction - allows searching for businesses, establishments, and addresses
                         componentRestrictions: { country: 'ec' }, // Ecuador
                     });
 
@@ -352,7 +352,7 @@ export const GoogleAddressPicker: React.FC<GoogleAddressPickerProps> = ({
                         ref={addressInputRef}
                         type="text"
                         className="address-input"
-                        placeholder="Escribe la dirección..."
+                        placeholder="Buscar dirección o negocio..."
                         value={address}
                         onChange={(e) => onLocationChange({ address: e.target.value })}
                         onBlur={() => {

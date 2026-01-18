@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../../../contexts/DataContext';
 import type { Client } from '../../../types/index';
 import { Button } from '../../../components/ui/Button';
-import { Plus, Search, Edit2, Trash2, UserCheck, Phone, MapPin, CreditCard, Mail } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Phone, MapPin, CreditCard, Mail, ChevronDown } from 'lucide-react';
 import { ClientModal } from './ClientModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { SuccessModal } from '../../../components/common/SuccessModal';
@@ -14,6 +14,7 @@ export const ClientList: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<Client | undefined>(undefined);
     const [filteredClients, setFilteredClients] = useState<Client[]>(clients);
+    const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [clientToDelete, setClientToDelete] = useState<string | null>(null);
@@ -54,6 +55,14 @@ export const ClientList: React.FC = () => {
         setTimeout(() => setErrorMessage(null), 3000);
     };
 
+    const toggleExpand = (clientId: string) => {
+        if (expandedClientId === clientId) {
+            setExpandedClientId(null);
+        } else {
+            setExpandedClientId(clientId);
+        }
+    };
+
     const handleDeleteClick = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         setClientToDelete(id);
@@ -73,35 +82,17 @@ export const ClientList: React.FC = () => {
         }
     };
 
-    const totalClients = clients.length;
-
     return (
         <div className="clients-container">
             <div className="clients-header">
                 <div>
                     <h1 className="clients-title">Clientes</h1>
-                    <p className="clients-subtitle">Gestiona la información de tus clientes.</p>
+                    <p className="clients-subtitle">Gestiona la información y ubicación de tus clientes.</p>
                 </div>
-                <Button onClick={() => handleOpenModal()} size="lg" className="btn-new-client">
-                    <Plus size={20} className="mr-2" />
+                <button onClick={() => handleOpenModal()} className="btn-new-client">
+                    <Plus size={20} />
                     Nuevo Cliente
-                </Button>
-            </div>
-
-            <div className="clients-stats-grid">
-                {[
-                    { icon: UserCheck, label: 'Total Clientes', value: totalClients, color: 'text-gray-900', bg: 'bg-gray-50 dark:bg-gray-900/20' },
-                ].map((stat, idx) => (
-                    <div key={idx} className="clients-stat-card group">
-                        <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{stat.label}</p>
-                            <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
-                        </div>
-                        <div className={`stat-icon-wrapper ${stat.bg} ${stat.color}`}>
-                            <stat.icon size={24} />
-                        </div>
-                    </div>
-                ))}
+                </button>
             </div>
 
             <div className="clients-search-bar">
@@ -117,65 +108,84 @@ export const ClientList: React.FC = () => {
                 </div>
             </div>
 
-            <div className="clients-grid">
-                {filteredClients.map((client, index) => (
-                    <div
-                        key={client.id || index}
-                        onClick={() => handleOpenModal(client)}
-                        className="client-card group"
-                    >
-                        <div className="client-card-content">
-                            <div className="client-card-header">
-                                <div className="client-icon-box">
-                                    <UserCheck size={24} />
+            <div className="clients-list">
+                <div className="clients-list-header">
+                    <div className="pl-8">Nombre</div>
+                    <div className="pl-8">Ciudad</div>
+                    <div className="text-right pr-8">Acciones</div>
+                </div>
+                {filteredClients.map((client, index) => {
+                    const isExpanded = expandedClientId === client.id;
+                    return (
+                        <div
+                            key={client.id || index}
+                            className={`client-list-item ${isExpanded ? 'expanded' : ''}`}
+                            onClick={() => client.id && toggleExpand(client.id)}
+                        >
+                            <div className="client-item-main">
+                                <div className="client-main-info">
+                                    <h3 className="client-name">{client.name}</h3>
                                 </div>
-                            </div>
-
-                            <div className="client-info">
-                                <h3 className="client-name">{client.name}</h3>
-
-                                <div className="client-detail">
-                                    <CreditCard size={16} />
-                                    <span>{client.rucCi}</span>
+                                <div className="client-city-info">
+                                    <h3 className="client-city-text">{client.city}</h3>
                                 </div>
-
-                                {client.email && (
-                                    <div className="client-detail">
-                                        <Mail size={16} />
-                                        <span>{client.email}</span>
+                                <div className="client-item-actions">
+                                    <div className="flex items-center gap-2 mr-4">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleOpenModal(client); }}
+                                            className="action-icon-btn edit"
+                                            title="Editar"
+                                        >
+                                            <Edit2 size={18} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => handleDeleteClick(client.id, e)}
+                                            className="action-icon-btn delete"
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
                                     </div>
-                                )}
-
-                                <div className="client-detail">
-                                    <Phone size={16} />
-                                    <span>{client.phone}</span>
-                                </div>
-
-                                <div className="client-detail">
-                                    <MapPin size={16} />
-                                    <span>{client.city} - {client.address}</span>
+                                    <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                                        <ChevronDown size={20} />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="client-actions-overlay">
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleOpenModal(client); }}
-                                    className="client-action-btn"
-                                    title="Editar"
-                                >
-                                    <Edit2 size={16} />
-                                </button>
-                                <button
-                                    onClick={(e) => handleDeleteClick(client.id, e)}
-                                    className="client-action-btn delete"
-                                    title="Eliminar"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
+                            <div className={`client-expanded-details ${isExpanded ? 'show' : ''}`}>
+                                <div className="client-details-grid">
+                                    <div className="client-detail-col">
+                                        <div className="client-detail-row">
+                                            <CreditCard size={16} />
+                                            <span><span className="font-semibold">RUC/CI:</span> {client.rucCi}</span>
+                                        </div>
+                                        {client.email && (
+                                            <div className="client-detail-row">
+                                                <Mail size={16} />
+                                                <span><span className="font-semibold">Email:</span> {client.email}</span>
+                                            </div>
+                                        )}
+                                        <div className="client-detail-row">
+                                            <Phone size={16} />
+                                            <span><span className="font-semibold">Teléfono:</span> {client.phone}</span>
+                                        </div>
+                                    </div>
+                                    <div className="client-detail-col">
+                                        <div className="client-detail-row">
+                                            <MapPin size={16} className="shrink-0" />
+                                            <span><span className="font-semibold">Dirección:</span> {client.address}</span>
+                                        </div>
+                                        {client.detalle && (
+                                            <div className="client-detail-row">
+                                                <span className="ml-6 text-sm text-gray-500">{client.detalle}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {filteredClients.length === 0 && (
@@ -183,8 +193,8 @@ export const ClientList: React.FC = () => {
                     <div className="empty-icon-circle">
                         <Search size={32} className="text-gray-400" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No se encontraron resultados</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-center max-w-sm mb-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">No se encontraron resultados</h3>
+                    <p className="text-gray-500 text-center max-w-sm mb-6">
                         No hay clientes que coincidan con tu búsqueda o aún no has creado ninguno.
                     </p>
                     <Button onClick={() => setSearchTerm('')} variant="secondary">

@@ -89,6 +89,28 @@
     border: 1px solid var(--color-border, #f3f4f6);
 }
 
+/* Button Styles */
+.btn-new-task {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3);
+    border-radius: 0.75rem;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-new-task:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+}
+
 /* Table Styles */
 .tasks-table-container {
     background-color: var(--color-bg-secondary, #ffffff);

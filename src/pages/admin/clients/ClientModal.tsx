@@ -94,13 +94,13 @@ export const ClientModal: React.FC<ClientModalProps> = ({ isOpen, onClose, clien
                 <div className="client-modal-header">
                     <div className="flex items-center gap-3">
                         <div className="client-icon-box">
-                            <UserCheck size={22} />
+                            <UserCheck size={22} className="text-white" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                            <h2 className="text-xl font-bold">
                                 {client ? 'Editar Cliente' : 'Nuevo Cliente'}
                             </h2>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                            <p className="text-sm">
                                 {client ? 'Modifica los datos del cliente' : 'Agrega un nuevo cliente al sistema'}
                             </p>
                         </div>

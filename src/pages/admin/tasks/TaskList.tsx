@@ -281,10 +281,10 @@ export const TaskList: React.FC = () => {
                     <h1 className="tasks-title">Tareas</h1>
                     <p className="tasks-subtitle">Gestiona las tareas del sistema.</p>
                 </div>
-                <Button onClick={() => handleOpenModal()} size="lg" className="btn-new-task">
-                    <Plus size={20} className="mr-2" />
+                <button onClick={() => handleOpenModal()} className="btn-new-task">
+                    <Plus size={20} />
                     Nueva Tarea
-                </Button>
+                </button>
             </div>
 
             {/* Date Filter Bar */}
