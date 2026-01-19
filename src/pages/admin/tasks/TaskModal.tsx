@@ -166,6 +166,13 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
         // Removed fechaInicio validation - it will be set by another API
         if (!formData.fechaLimite) {
             newErrors.fechaLimite = 'La fecha límite es requerida';
+        } else {
+            // Validate that fechaLimite is not in the past
+            const selectedDate = new Date(formData.fechaLimite);
+            const now = new Date();
+            if (selectedDate < now) {
+                newErrors.fechaLimite = 'La fecha límite no puede ser anterior a la fecha y hora actual';
+            }
         }
         if (!formData.clientId) {
             newErrors.clientId = 'El cliente es requerido';
@@ -352,6 +359,15 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onS
                                     value={formData.fechaLimite}
                                     onChange={(e) => setFormData({ ...formData, fechaLimite: e.target.value })}
                                     error={errors.fechaLimite}
+                                    min={(() => {
+                                        const now = new Date();
+                                        const year = now.getFullYear();
+                                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                                        const day = String(now.getDate()).padStart(2, '0');
+                                        const hours = String(now.getHours()).padStart(2, '0');
+                                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                                        return `${year}-${month}-${day}T${hours}:${minutes}`;
+                                    })()}
                                 />
                             </div>
                         </div>
